@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,10 +48,16 @@ function Splash() {
 }
 
 export default function App() {
-  const [loaded] = useFonts({ InstrumentSerif_400Regular, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold });
+  const [loaded, fontError] = useFonts({ InstrumentSerif_400Regular, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold });
+  // Don't block on fonts: in-app browsers can stall or fail the first font load. Fall back after a short wait.
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <SafeAreaProvider>
-      {loaded ? (
+      {loaded || fontError || timedOut ? (
         <StoreProvider>
           <Router />
         </StoreProvider>
