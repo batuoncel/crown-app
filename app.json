@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Crown",
+    "slug": "crown-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F3EFE6",
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Crown reads your watch dial to identify the model and show its value. Photos stay on your phone."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F3EFE6",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "experiments": {
+      "baseUrl": "/crown-app"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Crown reads your watch dial to identify the model and show its value. Photos stay on your phone."
+        }
+      ]
+    ]
+  }
+}
