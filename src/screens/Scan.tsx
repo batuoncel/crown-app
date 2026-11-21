@@ -3,7 +3,7 @@ import { Animated, Easing, Image, Linking, Pressable, ScrollView, Text, TextInpu
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { C, F, display, money, pct } from '../theme';
+import { C, F, display, money, num, pct } from '../theme';
 import { Button, Card, CountUp, Enter, Icon, LineChart, Pill, RoundButton, T, WatchArt } from '../ui';
 import { change12, Model, MODELS, recognise, valueOf } from '../data';
 import { useStore } from '../store';
@@ -213,7 +213,7 @@ export function Result() {
           <View style={{ position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: C.halo }} />
           {scan.photo
             ? <Image source={{ uri: scan.photo }} style={{ width: 190, height: 190, borderRadius: 95, borderWidth: 4, borderColor: C.surface }} />
-            : <Enter><View style={{ transform: [{ rotate: '-8deg' }] }}><WatchArt size={150} strap={false} dial={m.dial} dialHi={m.dialHi} /></View></Enter>}
+            : <Enter><View style={{ transform: [{ rotate: '-8deg' }] }}><WatchArt size={150} strap={false} look={m} /></View></Enter>}
           <View style={{ position: 'absolute', bottom: 2 }}>
             <Pill text={scan.confirmed ? 'Confirmed by you' : `High match · ${scan.confidence ?? 94}%`} bg={C.green} fg={C.onPrimary} icon="check" />
           </View>
@@ -230,7 +230,7 @@ export function Result() {
                 <Text style={T.label}>WORTH TODAY</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                   <CountUp to={Math.round(v.low / 50) * 50} style={{ fontFamily: F.serif, ...display(34), lineHeight: 40, color: C.ink }} />
-                  <Text style={{ fontFamily: F.serif, ...display(34), lineHeight: 40, color: C.ink }}>–{(Math.round(v.high / 50) * 50).toLocaleString('en-US')}</Text>
+                  <Text style={{ fontFamily: F.serif, ...display(34), lineHeight: 40, color: C.ink }}>–{num(Math.round(v.high / 50) * 50)}</Text>
                 </View>
                 <Text style={[T.small, { fontSize: 12.5 }]}>Good condition · {papersText}</Text>
               </View>
@@ -292,7 +292,7 @@ export function Partial() {
             <Enter key={m.id} delay={80 * i}>
               <Pressable onPress={() => { Haptics.selectionAsync(); setSel(m.id); }} accessibilityRole="radio" accessibilityState={{ selected: s }}>
                 <Card selected={s} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: s ? 15 : 16, marginBottom: 12 }}>
-                  <WatchArt size={58} strap={false} dial={m.dial} dialHi={m.dialHi} />
+                  <WatchArt size={58} strap={false} look={m} />
                   <View style={{ flex: 1 }}>
                     <Text style={[T.label, { color: C.ink }]}>{m.brand.toUpperCase()}</Text>
                     <Text style={T.b}>{m.name}</Text>
@@ -341,7 +341,7 @@ export function Search() {
         ) : list.map(m => (
           <Pressable key={m.id} onPress={() => pick(m)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <WatchArt size={44} strap={false} dial={m.dial} dialHi={m.dialHi} />
+              <WatchArt size={44} strap={false} look={m} />
               <View style={{ flex: 1 }}>
                 <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
                 <Text style={T.small}>{m.ref}</Text>

@@ -3,9 +3,8 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-na
 import * as Haptics from 'expo-haptics';
 import { C, F, display, money, pct } from '../theme';
 import { Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt } from '../ui';
-import { byId, change12, papersFactor, planSlots, valueOf } from '../data';
+import { byId, change12, ownedValue, papersFactor, planSlots } from '../data';
 import { useStore } from '../store';
-import { ThemeToggle } from './Onboarding';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -129,7 +128,7 @@ export function TabBar({ active }: { active: 'home' | 'alerts' }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch } = useStore();
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch } = useStore();
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
   const [undo, setUndo] = useState<{ owned: (typeof collection)[number]; index: number; name: string } | null>(null);
@@ -147,7 +146,11 @@ export function Home() {
   const [range, setRange] = useState<'1M' | '6M' | '1Y' | '5Y'>('1Y');
   const models = collection.map(o => byId(o.modelId));
   const slots = pro ? Infinity : 1;
-  const series = Array.from({ length: 13 }, (_, i) => models.reduce((s, m) => s + m.history[i] * papersFactor(answers.papers), 0));
+  const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + byId(o.modelId).history[i] * papersFactor(o.papers ?? answers.papers), 0));
+  const paidOnes = collection.filter(o => o.paid);
+  const paidTotal = paidOnes.reduce((s, o) => s + (o.paid ?? 0), 0);
+  const paidNow = paidOnes.reduce((s, o) => s + ownedValue(o, answers.papers).mid, 0);
+  const gain = paidNow - paidTotal;
   const total = series[12];
   const n = RANGES[range === '5Y' ? '1Y' : range];
   const shown = series.slice(13 - n);
@@ -160,8 +163,8 @@ export function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <ThemeToggle />
         {pro ? <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text="Try Pro" bg={C.greenSoft} fg={C.green} /></Pressable>}
+        <RoundButton icon="sliders" onPress={() => go('settings')} label="Settings" />
         </View>
       </View>
       {models.length === 0 ? (
@@ -195,6 +198,28 @@ export function Home() {
             })}
           </View>
 
+          {paidOnes.length ? (
+            <Card style={{ marginTop: 16, padding: 14, flexDirection: 'row' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={T.label}>YOU PAID</Text>
+                <Text style={{ fontFamily: F.serif, ...display(22), color: C.ink }}>{money(paidTotal)}</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: C.line, marginHorizontal: 14 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={T.label}>{gain >= 0 ? 'GAIN' : 'LOSS'}{paidOnes.length < collection.length ? ` · ${paidOnes.length} OF ${collection.length}` : ''}</Text>
+                <Text style={{ fontFamily: F.serif, ...display(22), color: gain >= 0 ? C.up : C.down }}>{gain >= 0 ? '+' : '−'}{money(Math.abs(gain))} <Text style={{ fontFamily: F.bold, fontSize: 13 }}>{paidTotal ? `${gain >= 0 ? '+' : '−'}${Math.abs((gain / paidTotal) * 100).toFixed(1)}%` : ''}</Text></Text>
+              </View>
+            </Card>
+          ) : (
+            <Pressable onPress={() => openWatch(collection[0].modelId)}>
+              <View style={{ marginTop: 16, padding: 14, borderRadius: 16, backgroundColor: C.brassSoft, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Icon name="edit" size={18} color={C.brassInk} />
+                <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 13.5, color: C.brassInk }}>Add what you paid to see your gain or loss</Text>
+                <Icon name="chevron" size={16} color={C.brassInk} />
+              </View>
+            </Pressable>
+          )}
+
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 24 }}>
             <Text style={[T.b, { fontSize: 17 }]}>Watches</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 14 }}>
@@ -205,14 +230,15 @@ export function Home() {
             </View>
           </View>
           {models.map((m, i) => {
-            const v = valueOf(m, answers.papers), ch = change12(m);
+            const owned = collection[i], v = ownedValue(owned, answers.papers), ch = change12(m);
             return (
               <Enter key={m.id} delay={60 * i}>
+                <Pressable disabled={editing} onPress={() => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={`Open ${m.brand} ${m.name}`}>
                 <Card style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }}><WatchArt size={46} strap={false} dial={m.dial} dialHi={m.dialHi} /></View>
+                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }}><WatchArt size={46} strap={false} look={m} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={[T.b, { fontSize: 15 }]} numberOfLines={1}>{m.brand} {m.name}</Text>
-                    <Text style={[T.small, { fontSize: 12.5 }]}>{m.ref}</Text>
+                    <Text style={[T.small, { fontSize: 12.5 }]} numberOfLines={1}>{owned.paid ? `Paid ${money(owned.paid)}` : m.ref}</Text>
                   </View>
                   {editing ? (
                     <Pressable onPress={() => remove(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${m.brand} ${m.name}`}
@@ -227,6 +253,7 @@ export function Home() {
                     </View>
                   )}
                 </Card>
+                </Pressable>
               </Enter>
             );
           })}

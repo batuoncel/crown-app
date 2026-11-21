@@ -80,5 +80,21 @@ export function setPalette(name: ThemeName) {
 // The sans display face reads larger than the serif at the same size.
 export const display = (size: number) => (themeName === 'navy' ? { fontSize: Math.round(size * 0.86), letterSpacing: -0.6 } : { fontSize: size });
 
-export const money = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+// ---------- currency ----------
+// Prices are stored in USD and shown in the chosen currency at a fixed demo rate.
+export type Currency = 'USD' | 'EUR' | 'TRY';
+export const CURRENCIES: { key: Currency; symbol: string; rate: number; sep: string }[] = [
+  { key: 'USD', symbol: '$', rate: 1, sep: ',' },
+  { key: 'EUR', symbol: '€', rate: 0.87, sep: ',' },
+  { key: 'TRY', symbol: '₺', rate: 44, sep: '.' },
+];
+let cur = CURRENCIES[0];
+export const setCurrency = (c: Currency) => { cur = CURRENCIES.find(x => x.key === c) ?? CURRENCIES[0]; };
+export const currency = () => cur;
+const group = (n: number, sep: string) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+// number in the chosen currency, without the symbol
+export const num = (usd: number) => group(usd * cur.rate, cur.sep);
+export const money = (usd: number) => (usd < 0 ? '−' : '') + cur.symbol + num(usd);
+export const toUsd = (local: number) => local / cur.rate;
+export const fromUsd = (usd: number) => usd * cur.rate;
 export const pct = (n: number) => (n >= 0 ? '▲ ' : '▼ ') + Math.abs(n).toFixed(1) + '%';

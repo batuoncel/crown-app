@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, F, display } from '../theme';
+import { C, F, display, money } from '../theme';
 import { Button, Card, Enter, Icon, Logo, Progress, RoundButton, T, WatchArt } from '../ui';
 import { Answers, BRANDS, MODELS, planSlots } from '../data';
 import { useStore } from '../store';
@@ -50,7 +50,7 @@ export function Promise_() {
         <Enter delay={500} style={{ position: 'absolute', left: 22, top: '18%' }}>
           <View style={tag()}>
             <Text style={T.label}>WORTH TODAY</Text>
-            <Text style={{ fontFamily: F.serif, ...display(30), lineHeight: 34, color: C.ink }}>$14,750</Text>
+            <Text style={{ fontFamily: F.serif, ...display(30), lineHeight: 34, color: C.ink }}>{money(14750)}</Text>
             <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.up }}>▲ 4.2% · 12 months</Text>
           </View>
         </Enter>
