@@ -1,7 +1,7 @@
 import { Answers, byId, ownedValue } from './data';
 import type { Owned } from './store';
 
-export type AwardCtx = { scans: number; collection: Owned[]; papers: Answers['papers']; shared: number };
+export type AwardCtx = { scans: number; collection: Owned[]; papers: Answers['papers']; shared: number; read: number };
 
 export type Award = {
   id: string;
@@ -36,6 +36,7 @@ export const AWARDS: Award[] = [
 
   { id: 'paid1', group: 'Market sense', name: 'Know Your Numbers', desc: 'Add what you paid for a watch', icon: 'edit', goal: 1, value: c => c.collection.filter(o => o.paid).length },
   { id: 'green', group: 'Market sense', name: 'In the Green', desc: 'A watch worth more than you paid', icon: 'chart', goal: 1, value: c => c.collection.filter(o => o.paid && ownedValue(o, c.papers).mid > o.paid).length },
+  { id: 'read3', group: 'Market sense', name: 'Student of the Craft', desc: "Read 3 collector's guides", icon: 'medal', goal: 3, value: c => c.read },
   { id: 'share1', group: 'Market sense', name: 'Show-off', desc: 'Share a value card', icon: 'share', goal: 1, value: c => c.shared },
 ];
 

@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { C, F, display, money, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { AWARDS, unlocked } from '../awards';
+import { GuideCarousel } from './Guide';
 import { byId, change12, ownedValue, papersFactor, planSlots } from '../data';
 import { useStore } from '../store';
 
@@ -129,8 +130,8 @@ export function TabBar({ active }: { active: Tab }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards } = useStore();
-  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared }).filter(id => !seenAwards.includes(id));
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides } = useStore();
+  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length }).filter(id => !seenAwards.includes(id));
   const freshAward = fresh.length ? AWARDS.find(x => x.id === fresh[fresh.length - 1]) : undefined;
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
@@ -279,6 +280,7 @@ export function Home() {
               <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.green }}>{canAdd ? 'Add a watch' : 'Add more watches with Pro'}</Text>
             </View>
           </Pressable>
+          <GuideCarousel />
           <Text style={[T.small, { fontSize: 11.5, textAlign: 'center', marginTop: 18 }]}>Values are demo data for this prototype.</Text>
         </ScrollView>
       )}

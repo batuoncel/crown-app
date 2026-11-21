@@ -8,12 +8,12 @@ export type Route =
   | 'promise' | 'goal' | 'about' | 'planLoading' | 'plan'
   | 'priming' | 'camera' | 'analysing' | 'result' | 'partial' | 'search'
   | 'paywall' | 'proWelcome' | 'home' | 'alerts'
-  | 'watch' | 'share' | 'settings' | 'awards';
+  | 'watch' | 'share' | 'settings' | 'awards' | 'guide';
 
 // paid is stored in USD; papers overrides the onboarding answer for this watch
 export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers']; photo?: string };
 
-type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[] };
+type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[]; guideId?: string; readGuides: string[] };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -27,6 +27,8 @@ type Store = Persisted & {
   addWatch: (m: Model, photo?: string) => void;
   bumpShare: () => void;
   markAwardsSeen: (ids: string[]) => void;
+  openGuide: (id: string) => void;
+  markGuideRead: (id: string) => void;
   removeWatch: (modelId: string) => void;
   restoreWatch: (o: Owned, index: number) => void;
   setPro: (v: boolean) => void;
@@ -51,13 +53,14 @@ const initial: Persisted = {
   currency: 'USD',
   shared: 0,
   seenAwards: [],
+  readGuides: [],
 };
 
 const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
 
 // routes that are safe to resume after the app is closed
-const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards'];
+const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards', 'guide'];
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<Persisted>(initial);
@@ -104,6 +107,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const next: Owned = { ...prev, modelId: m.id, addedAt: prev?.addedAt ?? new Date().toISOString(), photo: photo ?? prev?.photo };
       return { ...p, collection: [...p.collection.filter(o => o.modelId !== m.id), next] };
     }),
+    openGuide: guideId => setS(p => ({ ...p, guideId, route: 'guide' })),
+    markGuideRead: id => setS(p => (p.readGuides.includes(id) ? p : { ...p, readGuides: [...p.readGuides, id] })),
     bumpShare: () => setS(p => ({ ...p, shared: p.shared + 1 })),
     markAwardsSeen: ids => setS(p => (ids.every(i => p.seenAwards.includes(i)) ? p : { ...p, seenAwards: [...new Set([...p.seenAwards, ...ids])] })),
     removeWatch: id => setS(p => ({ ...p, collection: p.collection.filter(o => o.modelId !== id) })),

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, F, display, money } from '../theme';
-import { BottomCTA, Button, Card, Enter, Icon, Logo, Progress, RoundButton, T, WatchArt } from '../ui';
+import { C, F, display, money, num } from '../theme';
+import { BottomCTA, Button, Card, Enter, Icon, LineChart, Logo, Pill, Progress, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { Answers, BRANDS, MODELS, planSlots } from '../data';
 import { useStore } from '../store';
 
@@ -22,9 +22,108 @@ export function TopBar({ step, onBack }: { step: number; onBack?: () => void }) 
   );
 }
 
-// ---------- 1. Promise ----------
+// ---------- 1. Intro: three slides that show how Crown works ----------
+const SLIDES = [
+  { title: 'Know what your watch is worth.', sub: 'One photo of the dial. Crown finds the exact reference in seconds.' },
+  { title: 'An honest range, not a guess.', sub: '12 months of listed prices, adjusted for box and papers. Unsure? We ask before we show a price.' },
+  { title: 'Your collection, watched for you.', sub: 'See your total every week, and get told when a watch moves.' },
+];
+
+function SlideScan({ y }: { y: Animated.AnimatedInterpolation<number> }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: C.halo }} />
+      <Animated.View style={{ transform: [{ translateY: y }, { rotate: '-8deg' }] }}>
+        <WatchArt size={170} />
+      </Animated.View>
+      <View style={{ position: 'absolute', width: 220, height: 220, borderRadius: 30, borderWidth: 2, borderColor: C.brass, borderStyle: 'dashed', opacity: 0.8 }} />
+      <Enter delay={500} style={{ position: 'absolute', right: 20, bottom: '12%' }}>
+        <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
+          <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={14} color={C.onPrimary} w={2.4} /></View>
+          <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }}>Rolex 126610LN · 94%</Text>
+        </View>
+      </Enter>
+    </View>
+  );
+}
+
+function SlideValue({ width }: { width: number }) {
+  const data = [14150, 14260, 14090, 14300, 14200, 14330, 14220, 14390, 14280, 14450, 14400, 14560, 14750];
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: C.halo }} />
+      <View style={[tag(), { width: Math.min(width - 64, 300), padding: 18 }]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View>
+            <Text style={T.label}>WORTH TODAY</Text>
+            <Text style={{ fontFamily: F.serif, ...display(28), lineHeight: 34, color: C.ink }}>{money(13900)}–{num(15600)}</Text>
+            <Text style={[T.small, { fontSize: 12 }]}>Full box and papers</Text>
+          </View>
+          <Pill text="▲ 4.2%" bg={C.upSoft} fg={C.up} />
+        </View>
+        <View style={{ marginTop: 12 }}><LineChart data={data} width={Math.min(width - 64, 300) - 36} height={64} color={C.up} /></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+          <Text style={[T.small, { fontSize: 11 }]}>12 months ago</Text>
+          <Text style={[T.small, { fontSize: 11 }]}>Today</Text>
+        </View>
+      </View>
+      <Enter delay={400} style={{ position: 'absolute', left: 22, top: '10%' }}>
+        <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
+          <Icon name="box" size={16} color={C.brassInk} />
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>Box & papers +6%</Text>
+        </View>
+      </Enter>
+      <Enter delay={700} style={{ position: 'absolute', right: 22, bottom: '10%' }}>
+        <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
+          <Icon name="chart" size={16} color={C.green} />
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>1,840 listings checked</Text>
+        </View>
+      </Enter>
+    </View>
+  );
+}
+
+function SlideCollection({ width }: { width: number }) {
+  const rows = [
+    { b: 'Rolex', n: 'Submariner Date', v: 15650, c: '▲ 4.2%' },
+    { b: 'Omega', n: 'Speedmaster', v: 6680, c: '▲ 4.1%' },
+    { b: 'Cartier', n: 'Santos', v: 7470, c: '▲ 2.2%' },
+  ];
+  const w = Math.min(width - 64, 300);
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: C.halo }} />
+      <View style={[tag(), { width: w, padding: 16 }]}>
+        <Text style={T.label}>YOUR COLLECTION</Text>
+        <Text style={{ fontFamily: F.serif, ...display(34), lineHeight: 40, color: C.ink }}>{money(29800)}</Text>
+        {rows.map(r => (
+          <View key={r.b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
+            <WatchThumb brand={r.b} size={34} radius={10} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }} numberOfLines={1}>{r.b} {r.n}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }}>{money(r.v)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 11, color: C.up }}>{r.c}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      <Enter delay={500} style={{ position: 'absolute', left: 18, top: '9%' }}>
+        <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
+          <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.brass, alignItems: 'center', justifyContent: 'center' }}><Icon name="bell" size={13} color="#FFFFFF" w={2} /></View>
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>Submariner is up 5%</Text>
+        </View>
+      </Enter>
+    </View>
+  );
+}
+
 export function Promise_() {
   const { go, reset } = useStore();
+  const { width } = useWindowDimensions();
+  const [page, setPage] = useState(0);
+  const sv = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const float = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.loop(Animated.sequence([
@@ -33,40 +132,48 @@ export function Promise_() {
     ])).start();
   }, []);
   const y = float.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
+  const to = (i: number) => { setPage(i); sv.current?.scrollTo({ x: i * width, animated: true }); };
+  const next = () => (page < SLIDES.length - 1 ? to(page + 1) : go('goal'));
+  const last = page === SLIDES.length - 1;
+
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 24, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <ThemeToggle />
-          <View style={{ width: 90, flexDirection: 'row' }}><Progress step={1} /></View>
+          {!last ? <Pressable onPress={() => go('goal')} hitSlop={10} accessibilityRole="button"><Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>Skip</Text></Pressable> : null}
         </View>
       </View>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ position: 'absolute', width: 320, height: 320, borderRadius: 160, backgroundColor: C.halo }} />
-        <Animated.View style={{ transform: [{ translateY: y }, { rotate: '-8deg' }] }}>
-          <WatchArt size={200} />
-        </Animated.View>
-        <Enter delay={500} style={{ position: 'absolute', left: 22, top: '18%' }}>
-          <View style={tag()}>
-            <Text style={T.label}>WORTH TODAY</Text>
-            <Text style={{ fontFamily: F.serif, ...display(30), lineHeight: 34, color: C.ink }}>{money(14750)}</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.up }}>▲ 4.2% · 12 months</Text>
+      <ScrollView
+        ref={sv}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={e => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        onScroll={e => { const p = Math.round(e.nativeEvent.contentOffset.x / width); if (p !== page) setPage(p); }}
+        scrollEventThrottle={64}
+        style={{ flex: 1 }}
+      >
+        {SLIDES.map((s, i) => (
+          <View key={i} style={{ width, flex: 1 }}>
+            {i === 0 ? <SlideScan y={y} /> : i === 1 ? <SlideValue width={width} /> : <SlideCollection width={width} />}
+            <View style={{ paddingHorizontal: 24, minHeight: 150 }}>
+              <Text style={T.h1}>{s.title}</Text>
+              <Text style={T.sub}>{s.sub}</Text>
+            </View>
           </View>
-        </Enter>
-        <Enter delay={900} style={{ position: 'absolute', right: 20, bottom: '14%' }}>
-          <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
-            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={14} color={C.onPrimary} w={2.4} /></View>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }}>High match · 94%</Text>
-          </View>
-        </Enter>
-      </View>
-      <View style={{ paddingHorizontal: 24 }}>
-        <Text style={T.h1}>Know what your watch is worth.</Text>
-        <Text style={T.sub}>One photo. No account. An honest value range in under a minute.</Text>
+        ))}
+      </ScrollView>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 10 }} accessibilityLabel={`Slide ${page + 1} of ${SLIDES.length}`}>
+        {SLIDES.map((_, i) => (
+          <Pressable key={i} onPress={() => to(i)} hitSlop={6}>
+            <View style={{ width: i === page ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === page ? C.green : C.line }} />
+          </Pressable>
+        ))}
       </View>
       <BottomCTA note="Takes about 60 seconds">
-        <Button title="Get started" onPress={() => go('goal')} />
+        <Button title={last ? 'Get started' : 'Continue'} onPress={next} />
       </BottomCTA>
     </View>
   );
