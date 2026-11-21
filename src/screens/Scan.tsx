@@ -4,14 +4,16 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { C, F, display, money, num, pct } from '../theme';
-import { Button, Card, CountUp, Enter, Icon, LineChart, Pill, RoundButton, T, WatchArt } from '../ui';
+import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
+import { pickPhoto, shrink } from '../photo';
 import { change12, Model, MODELS, recognise, valueOf } from '../data';
 import { useStore } from '../store';
 import { Spinner, TopBar } from './Onboarding';
 
 // ---------- 5. Camera priming (+ denied state) ----------
 export function Priming() {
-  const { go, onboarded } = useStore();
+  const { go, onboarded, setScan } = useStore();
+  useEffect(() => { setScan({}); }, []); // a new scan starts clean
   const [perm, request] = useCameraPermissions();
   const [denied, setDenied] = useState(false);
 
@@ -34,10 +36,9 @@ export function Priming() {
           <Text style={[T.h2, { marginTop: 24, textAlign: 'center' }]}>The camera is off.</Text>
           <Text style={[T.sub, { textAlign: 'center' }]}>You can turn it on in Settings, or find your watch by name. Both give you the same value.</Text>
         </View>
-        <View style={{ padding: 24, paddingBottom: 12 }}>
+        <BottomCTA secondary={<Button title="Open Settings" kind="ghost" onPress={() => Linking.openSettings()} />}>
           <Button title="Find my watch by name" icon="search" onPress={() => go('search')} />
-          <Button title="Open Settings" kind="ghost" onPress={() => Linking.openSettings()} />
-        </View>
+        </BottomCTA>
       </View>
     );
   }
@@ -61,10 +62,9 @@ export function Priming() {
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><Icon name="eye" size={20} color={C.green} /><Text style={[T.body, { fontFamily: F.semibold }]}>Only used while you scan</Text></View>
         </View>
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA secondary={<Button title="Not now, search by name" kind="ghost" onPress={() => go('search')} />}>
         <Button title="Allow camera" onPress={ask} />
-        <Button title="Not now, search by name" kind="ghost" onPress={() => go('search')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -89,11 +89,19 @@ export function Camera() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     let photo: string | undefined;
     try {
-      const p = ready ? await cam.current?.takePictureAsync({ quality: 0.6 }) : undefined;
-      photo = p?.uri;
+      const p = ready ? await cam.current?.takePictureAsync({ quality: 0.8 }) : undefined;
+      photo = p?.uri ? await shrink(p.uri) : undefined;
     } catch {
       photo = undefined; // fall back to the illustration
     }
+    setScan({ photo });
+    go('analysing');
+  };
+
+  const fromLibrary = async () => {
+    if (busy) return;
+    const photo = await pickPhoto();
+    if (!photo) return;
     setScan({ photo });
     go('analysing');
   };
@@ -127,7 +135,10 @@ export function Camera() {
         <Pressable onPress={shoot} accessibilityRole="button" accessibilityLabel="Take photo" style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: C.nightText, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 62, height: 62, borderRadius: 31, backgroundColor: busy ? C.brass : C.nightText }} />
         </Pressable>
-        <View style={{ width: 52 }} />
+        <Pressable onPress={fromLibrary} accessibilityLabel="Choose a photo" style={{ width: 52, alignItems: 'center', gap: 4 }}>
+          <Icon name="image" size={24} color={C.nightText} />
+          <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.nightStone }}>Photos</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -195,7 +206,7 @@ export function Result() {
   const papersText = answers.papers === 'Yes' ? 'full box and papers' : answers.papers === 'Some' ? 'some box and papers' : 'no box or papers';
   const add = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addWatch(m);
+    addWatch(m, scan.photo);
     if (!onboarded) {
       finishOnboarding();
       go(pro ? 'home' : 'paywall');
@@ -213,7 +224,7 @@ export function Result() {
           <View style={{ position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: C.halo }} />
           {scan.photo
             ? <Image source={{ uri: scan.photo }} style={{ width: 190, height: 190, borderRadius: 95, borderWidth: 4, borderColor: C.surface }} />
-            : <Enter><View style={{ transform: [{ rotate: '-8deg' }] }}><WatchArt size={150} strap={false} look={m} /></View></Enter>}
+            : <Enter><WatchThumb brand={m.brand} size={170} radius={85} /></Enter>}
           <View style={{ position: 'absolute', bottom: 2 }}>
             <Pill text={scan.confirmed ? 'Confirmed by you' : `High match · ${scan.confidence ?? 94}%`} bg={C.green} fg={C.onPrimary} icon="check" />
           </View>
@@ -250,10 +261,9 @@ export function Result() {
           </Card>
         </Enter>
       </ScrollView>
-      <View style={{ padding: 24, paddingTop: 8, paddingBottom: 12 }}>
+      <BottomCTA secondary={<Button title="Not my watch" kind="ghost" onPress={() => go('search')} />}>
         <Button title="Add to my collection" onPress={add} />
-        <Button title="Not my watch" kind="ghost" onPress={() => go('search')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -292,7 +302,7 @@ export function Partial() {
             <Enter key={m.id} delay={80 * i}>
               <Pressable onPress={() => { Haptics.selectionAsync(); setSel(m.id); }} accessibilityRole="radio" accessibilityState={{ selected: s }}>
                 <Card selected={s} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: s ? 15 : 16, marginBottom: 12 }}>
-                  <WatchArt size={58} strap={false} look={m} />
+                  <WatchThumb brand={m.brand} size={52} radius={14} />
                   <View style={{ flex: 1 }}>
                     <Text style={[T.label, { color: C.ink }]}>{m.brand.toUpperCase()}</Text>
                     <Text style={T.b}>{m.name}</Text>
@@ -305,10 +315,9 @@ export function Partial() {
           );
         })}
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA secondary={<Button title="None of these, search by name" kind="ghost" onPress={() => go('search')} />}>
         <Button title="Yes, show my value" disabled={!sel} onPress={() => { setScan({ ...scan, model: opts.find(o => o.id === sel), confirmed: true }); go('result'); }} />
-        <Button title="None of these, search by name" kind="ghost" onPress={() => go('search')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -318,7 +327,8 @@ export function Search() {
   const { go, setScan, onboarded } = useStore();
   const [q, setQ] = useState('');
   const list = MODELS.filter(m => (m.brand + ' ' + m.name + ' ' + m.ref).toLowerCase().includes(q.trim().toLowerCase()));
-  const pick = (m: Model) => { Haptics.selectionAsync(); setScan({ model: m, confirmed: true }); go('result'); };
+  const { scan } = useStore();
+  const pick = (m: Model) => { Haptics.selectionAsync(); setScan({ photo: scan.photo, model: m, confirmed: true }); go('result'); };
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, height: 44 }}>
@@ -341,7 +351,7 @@ export function Search() {
         ) : list.map(m => (
           <Pressable key={m.id} onPress={() => pick(m)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <WatchArt size={44} strap={false} look={m} />
+              <WatchThumb brand={m.brand} size={44} radius={12} />
               <View style={{ flex: 1 }}>
                 <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
                 <Text style={T.small}>{m.ref}</Text>

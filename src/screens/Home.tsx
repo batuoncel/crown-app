@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { C, F, display, money, pct } from '../theme';
-import { Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt } from '../ui';
+import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
+import { AWARDS, unlocked } from '../awards';
 import { byId, change12, ownedValue, papersFactor, planSlots } from '../data';
 import { useStore } from '../store';
 
@@ -76,12 +77,9 @@ export function Paywall() {
         <Plan id="year" title="Yearly" sub="7-day free trial, then $39.99/year" price="$0.77" unit="per week" best />
         <Plan id="week" title="Weekly" sub="No trial, billed weekly" price="$4.99" unit="per week" />
       </ScrollView>
-      <View style={{ padding: 24, paddingTop: 12, paddingBottom: 12 }}>
+      <BottomCTA note={`${plan === 'year' ? `No charge today. Cancel anytime before ${fmtDate(charge)}.` : 'Cancel anytime in Settings.'}\nDemo prototype, no real payment.`}>
         <Button title={plan === 'year' ? 'Start my 7-day free trial' : 'Subscribe for $4.99/week'} onPress={() => { setPro(true); go('proWelcome'); }} />
-        <Text style={[T.small, { fontSize: 12, textAlign: 'center', marginTop: 10 }]}>
-          {plan === 'year' ? `No charge today. Cancel anytime in Settings before ${fmtDate(charge)}.` : 'Cancel anytime in Settings.'}{'\n'}Demo prototype, no real payment.
-        </Text>
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -105,22 +103,25 @@ export function ProWelcome() {
 }
 
 // ---------- 9. Home ----------
-export function TabBar({ active }: { active: 'home' | 'alerts' }) {
+type Tab = 'home' | 'awards' | 'alerts' | 'settings';
+export function TabBar({ active }: { active: Tab }) {
   const { go } = useStore();
-  const Tab = ({ id, icon, label }: { id: 'home' | 'alerts'; icon: string; label: string }) => (
-    <Pressable onPress={() => { Haptics.selectionAsync(); go(id); }} style={{ alignItems: 'center', gap: 4, width: 80 }} accessibilityRole="tab" accessibilityState={{ selected: active === id }}>
-      <Icon name={icon} size={24} color={active === id ? C.green : C.stone} />
+  const TabItem = ({ id, icon, label }: { id: Tab; icon: string; label: string }) => (
+    <Pressable onPress={() => { Haptics.selectionAsync(); go(id); }} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="tab" accessibilityState={{ selected: active === id }}>
+      <Icon name={icon} size={23} color={active === id ? C.green : C.stone} />
       <Text style={{ fontFamily: F.semibold, fontSize: 11, color: active === id ? C.green : C.stone }}>{label}</Text>
     </Pressable>
   );
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingTop: 10, paddingBottom: 6, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.paper }}>
-      <Tab id="home" icon="watch" label="Collection" />
-      <Pressable onPress={() => go('priming')} style={{ alignItems: 'center', gap: 4, width: 80 }} accessibilityRole="button" accessibilityLabel="Scan a watch">
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingTop: 10, paddingBottom: 6, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.paper }}>
+      <TabItem id="home" icon="watch" label="Collection" />
+      <TabItem id="awards" icon="medal" label="Awards" />
+      <Pressable onPress={() => go('priming')} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="button" accessibilityLabel="Scan a watch">
         <View style={{ width: 54, height: 54, marginTop: -24, borderRadius: 27, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center', shadowColor: C.green, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } }}><Icon name="scan" size={24} color={C.onPrimary} /></View>
         <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.stone }}>Scan</Text>
       </Pressable>
-      <Tab id="alerts" icon="bell" label="Alerts" />
+      <TabItem id="alerts" icon="bell" label="Alerts" />
+      <TabItem id="settings" icon="sliders" label="Settings" />
     </View>
   );
 }
@@ -128,7 +129,9 @@ export function TabBar({ active }: { active: 'home' | 'alerts' }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch } = useStore();
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards } = useStore();
+  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared }).filter(id => !seenAwards.includes(id));
+  const freshAward = fresh.length ? AWARDS.find(x => x.id === fresh[fresh.length - 1]) : undefined;
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
   const [undo, setUndo] = useState<{ owned: (typeof collection)[number]; index: number; name: string } | null>(null);
@@ -164,7 +167,6 @@ export function Home() {
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         {pro ? <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text="Try Pro" bg={C.greenSoft} fg={C.green} /></Pressable>}
-        <RoundButton icon="sliders" onPress={() => go('settings')} label="Settings" />
         </View>
       </View>
       {models.length === 0 ? (
@@ -176,6 +178,20 @@ export function Home() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 18, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+          {freshAward ? (
+            <Pressable onPress={() => go('awards')} accessibilityRole="button">
+              <Enter style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingRight: 14, borderRadius: 16, backgroundColor: C.brassSoft }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.brass, alignItems: 'center', justifyContent: 'center' }}><Icon name={freshAward.icon} size={19} color="#FFFFFF" w={2} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: 11.5, letterSpacing: 1, color: C.brassInk }}>{fresh.length > 1 ? `${fresh.length} NEW AWARDS` : 'NEW AWARD'}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.ink }}>{freshAward.name}</Text>
+                  </View>
+                  <Icon name="chevron" size={16} color={C.brassInk} />
+                </View>
+              </Enter>
+            </Pressable>
+          ) : null}
           <Text style={T.label}>YOUR COLLECTION</Text>
           <CountUp to={total} style={{ fontFamily: F.serif, ...display(52), lineHeight: 58, color: C.ink }} />
           <Text style={{ fontFamily: F.bold, fontSize: 14, color: delta >= 0 ? C.up : C.down }}>
@@ -235,7 +251,7 @@ export function Home() {
               <Enter key={m.id} delay={60 * i}>
                 <Pressable disabled={editing} onPress={() => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={`Open ${m.brand} ${m.name}`}>
                 <Card style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }}><WatchArt size={46} strap={false} look={m} /></View>
+                  <WatchThumb photo={owned.photo} brand={m.brand} size={56} radius={14} />
                   <View style={{ flex: 1 }}>
                     <Text style={[T.b, { fontSize: 15 }]} numberOfLines={1}>{m.brand} {m.name}</Text>
                     <Text style={[T.small, { fontSize: 12.5 }]} numberOfLines={1}>{owned.paid ? `Paid ${money(owned.paid)}` : m.ref}</Text>

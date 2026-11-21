@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Image, Keyboard, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { C, CURRENCIES, Currency, F, currency as cur, display, fromUsd, isNavy, money, num, pct, toUsd } from '../theme';
-import { Button, Card, Enter, Icon, LineChart, Pill, RoundButton, Segmented, T, WatchArt } from '../ui';
+import { Button, Card, Enter, Icon, LineChart, Pill, RoundButton, Segmented, T, WatchThumb } from '../ui';
+import { pickPhoto } from '../photo';
+import { TabBar } from './Home';
 import { Answers, MONTHS, byId, change12, ownedValue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
@@ -68,9 +70,13 @@ export function WatchDetail() {
     <View style={{ flex: 1 }}>
       <Header title="Your watch" onBack={() => go('home')} right={<RoundButton icon="share" onPress={() => go('share')} label="Share value card" />} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 28 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={{ height: 210, alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ position: 'absolute', width: 196, height: 196, borderRadius: 98, backgroundColor: C.halo }} />
-          <Enter><View style={{ transform: [{ rotate: '-8deg' }] }}><WatchArt size={150} strap={false} look={m} /></View></Enter>
+        <View style={{ alignItems: 'center', marginTop: 8 }}>
+          <Enter><WatchThumb photo={owned.photo} brand={m.brand} size={200} radius={28} /></Enter>
+          <Pressable onPress={async () => { const p = await pickPhoto(); if (p) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); updateWatch(m.id, { photo: p }); } }} hitSlop={8} accessibilityRole="button"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 14, paddingHorizontal: 14, height: 34, borderRadius: 17, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface }}>
+            <Icon name="image" size={16} color={C.green} />
+            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>{owned.photo ? 'Change photo' : 'Add your photo'}</Text>
+          </Pressable>
         </View>
         <View style={{ alignItems: 'center' }}>
           <Text style={[T.label, { fontSize: 13 }]}>{m.brand.toUpperCase()}</Text>
@@ -168,7 +174,7 @@ export function WatchDetail() {
 
 // ---------- Share card ----------
 export function Share_() {
-  const { go, answers } = useStore();
+  const { go, answers, bumpShare } = useStore();
   const { width } = useWindowDimensions();
   const owned = useOwned();
   const [note, setNote] = useState('');
@@ -184,11 +190,13 @@ export function Share_() {
   const share = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await Share.share({ message: text });
+      const r = await Share.share({ message: text });
+      if (r.action !== Share.dismissedAction) bumpShare();
     } catch {
       try {
         await (globalThis as any).navigator.clipboard.writeText(text);
         setNote('Copied. Paste it anywhere.');
+        bumpShare();
       } catch {
         setNote('Sharing is not available in this browser.');
       }
@@ -210,7 +218,7 @@ export function Share_() {
               <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: soft }}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
             </View>
             <View style={{ alignItems: 'center', marginVertical: 14 }}>
-              <View style={{ transform: [{ rotate: '-10deg' }] }}><WatchArt size={w * 0.42} look={m} /></View>
+              <WatchThumb photo={owned.photo} brand={m.brand} size={w * 0.62} radius={22} style={{ borderWidth: 3, borderColor: 'rgba(243,239,230,.9)' }} />
             </View>
             <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1.6, color: '#D9B26A' }}>{m.brand.toUpperCase()}</Text>
             <Text style={{ fontFamily: F.serif, ...display(28), lineHeight: 32, color: fg }}>{m.name}</Text>
@@ -250,7 +258,7 @@ export function Settings() {
   const eur = CURRENCIES.find(c => c.key === 'EUR')!, tl = CURRENCIES.find(c => c.key === 'TRY')!;
   return (
     <View style={{ flex: 1 }}>
-      <Header title="Settings" onBack={() => go('home')} />
+      <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Settings</Text></View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         <Section label="APPEARANCE">
           <Segmented<ThemeName> options={[{ key: 'classic', label: 'Classic' }, { key: 'navy', label: 'Navy' }]} value={theme} onChange={setTheme} />
@@ -286,8 +294,9 @@ export function Settings() {
             <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>{confirm ? 'Tap again: delete everything and start over' : 'Reset demo'}</Text>
           </Pressable>
         </Section>
-        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>Crown 1.1 · Batu Öncel, Pınar Işıl Şahin, Cem Aksu</Text>
+        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>Crown 1.2 · Batu Öncel, Pınar Işıl Şahin, Cem Aksu</Text>
       </ScrollView>
+      <TabBar active="settings" />
     </View>
   );
 }

@@ -8,12 +8,12 @@ export type Route =
   | 'promise' | 'goal' | 'about' | 'planLoading' | 'plan'
   | 'priming' | 'camera' | 'analysing' | 'result' | 'partial' | 'search'
   | 'paywall' | 'proWelcome' | 'home' | 'alerts'
-  | 'watch' | 'share' | 'settings';
+  | 'watch' | 'share' | 'settings' | 'awards';
 
 // paid is stored in USD; papers overrides the onboarding answer for this watch
-export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers'] };
+export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers']; photo?: string };
 
-type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string };
+type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[] };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -24,7 +24,9 @@ type Store = Persisted & {
   setAnswers: (a: Partial<Answers>) => void;
   toggleBrand: (b: string) => void;
   setScan: (s: Scan) => void;
-  addWatch: (m: Model) => void;
+  addWatch: (m: Model, photo?: string) => void;
+  bumpShare: () => void;
+  markAwardsSeen: (ids: string[]) => void;
   removeWatch: (modelId: string) => void;
   restoreWatch: (o: Owned, index: number) => void;
   setPro: (v: boolean) => void;
@@ -47,13 +49,15 @@ const initial: Persisted = {
   route: 'promise',
   theme: 'classic',
   currency: 'USD',
+  shared: 0,
+  seenAwards: [],
 };
 
 const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
 
 // routes that are safe to resume after the app is closed
-const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch'];
+const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards'];
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<Persisted>(initial);
@@ -95,7 +99,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return { ...p, answers: { ...p.answers, brands: has ? p.answers.brands.filter(x => x !== b) : [...p.answers.brands, b] } };
     }),
     setScan,
-    addWatch: m => setS(p => ({ ...p, collection: [...p.collection.filter(o => o.modelId !== m.id), { modelId: m.id, addedAt: new Date().toISOString() }] })),
+    addWatch: (m, photo) => setS(p => {
+      const prev = p.collection.find(o => o.modelId === m.id);
+      const next: Owned = { ...prev, modelId: m.id, addedAt: prev?.addedAt ?? new Date().toISOString(), photo: photo ?? prev?.photo };
+      return { ...p, collection: [...p.collection.filter(o => o.modelId !== m.id), next] };
+    }),
+    bumpShare: () => setS(p => ({ ...p, shared: p.shared + 1 })),
+    markAwardsSeen: ids => setS(p => (ids.every(i => p.seenAwards.includes(i)) ? p : { ...p, seenAwards: [...new Set([...p.seenAwards, ...ids])] })),
     removeWatch: id => setS(p => ({ ...p, collection: p.collection.filter(o => o.modelId !== id) })),
     restoreWatch: (o, index) => setS(p => {
       const c = p.collection.filter(x => x.modelId !== o.modelId);

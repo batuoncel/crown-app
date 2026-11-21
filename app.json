@@ -36,6 +36,13 @@
         {
           "cameraPermission": "Crown reads your watch dial to identify the model and show its value. Photos stay on your phone."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Crown uses your photos so you can add a picture of your own watch.",
+          "microphonePermission": false
+        }
       ]
     ]
   }

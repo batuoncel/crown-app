@@ -3,7 +3,7 @@ import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { C, F, display, money } from '../theme';
-import { Button, Card, Enter, Icon, Logo, Progress, RoundButton, T, WatchArt } from '../ui';
+import { BottomCTA, Button, Card, Enter, Icon, Logo, Progress, RoundButton, T, WatchArt } from '../ui';
 import { Answers, BRANDS, MODELS, planSlots } from '../data';
 import { useStore } from '../store';
 
@@ -65,10 +65,9 @@ export function Promise_() {
         <Text style={T.h1}>Know what your watch is worth.</Text>
         <Text style={T.sub}>One photo. No account. An honest value range in under a minute.</Text>
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA note="Takes about 60 seconds">
         <Button title="Get started" onPress={() => go('goal')} />
-        <Text style={[T.small, { textAlign: 'center', marginTop: 10, fontSize: 12 }]}>Takes about 60 seconds</Text>
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -107,9 +106,9 @@ export function Goal() {
           );
         })}
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA>
         <Button title="Continue" disabled={!answers.goal} onPress={() => go('about')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -176,9 +175,9 @@ export function About() {
           <Seg items={['Yes', 'Some', 'No'] as NonNullable<Answers['papers']>[]} value={answers.papers} onChange={v => setAnswers({ papers: v })} />
         </View>
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA>
         <Button title="Build my plan" disabled={!done} onPress={() => go('planLoading')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }
@@ -199,7 +198,7 @@ export function PlanLoading() {
   const refs = MODELS.filter(m => answers.brands.includes(m.brand)).length * 263 + 120;
   useEffect(() => {
     const id = a.addListener(({ value }) => setPct(Math.round(value)));
-    Animated.timing(a, { toValue: 100, duration: 2600, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(() => {
+    Animated.timing(a, { toValue: 100, duration: 5200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => go('plan'), 250);
     });
@@ -293,9 +292,9 @@ export function Plan() {
           <Text style={[T.small, { flex: 1, fontSize: 12.5 }]}>Values come from 12 months of listed prices, not one shop's asking price. Demo data in this prototype.</Text>
         </View>
       </View>
-      <View style={{ padding: 24, paddingBottom: 12 }}>
+      <BottomCTA>
         <Button title="Scan my first watch" icon="scan" onPress={() => go('priming')} />
-      </View>
+      </BottomCTA>
     </View>
   );
 }

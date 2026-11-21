@@ -29,6 +29,7 @@ const P: Record<string, string> = {
   alert: 'M12 4l9 16H3zM12 10v4M12 17v.1',
   refresh: 'M19 8a8 8 0 1 0 1 6M19 3v5h-5',
   trash: 'M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6',
+  medal: 'M8.5 3h7l-1.8 5.2M8.5 3l1.8 5.2M12 8.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12M12 11.5l1.1 2.2 2.4.3-1.7 1.7.4 2.4-2.2-1.2-2.2 1.2.4-2.4-1.7-1.7 2.4-.3z',
   sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
   share: 'M12 14.5V3.5M7.5 8L12 3.5 16.5 8M5 12v7a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-7',
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -128,6 +129,32 @@ export function Pill({ text, bg, fg, icon }: { text: string; bg: string; fg: str
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 28, paddingHorizontal: 12, borderRadius: 14, backgroundColor: bg, alignSelf: 'flex-start' }}>
       {icon ? <Icon name={icon} size={14} color={fg} w={2.2} /> : null}
       <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: fg }}>{text}</Text>
+    </View>
+  );
+}
+
+// The user's own photo of the watch. There are tens of thousands of references, so there is no
+// stock drawing per model: without a photo we show a brand monogram instead.
+export function WatchThumb({ photo, brand, size, radius = size * 0.25, style }: { photo?: string; brand: string; size: number; radius?: number; style?: ViewStyle }) {
+  if (photo) return <Image source={{ uri: photo }} style={[{ width: size, height: size, borderRadius: radius, backgroundColor: C.line }, style as object]} accessibilityLabel={`Your photo of the ${brand}`} />;
+  const initials = brand.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <View style={[{ width: size, height: size, borderRadius: radius, backgroundColor: C.halo, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line }, style]}>
+      <Text style={{ fontFamily: F.serif, fontSize: size * (initials.length > 1 ? 0.34 : 0.44), color: C.brassInk, letterSpacing: 1 }}>{initials}</Text>
+      {size >= 90 ? <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: C.stone, marginTop: 4 }}>No photo yet</Text> : null}
+    </View>
+  );
+}
+
+// Bottom call-to-action with a fixed-height slot under the main button (secondary button or note),
+// so the main button sits at the same spot on every onboarding screen and on the paywall.
+export function BottomCTA({ children, secondary, note }: { children: React.ReactNode; secondary?: React.ReactNode; note?: string }) {
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 12 }}>
+      {children}
+      <View style={{ height: 48, justifyContent: 'center' }}>
+        {secondary ?? (note ? <Text style={{ fontFamily: F.regular, fontSize: 12, lineHeight: 16, color: C.stone, textAlign: 'center' }}>{note}</Text> : null)}
+      </View>
     </View>
   );
 }

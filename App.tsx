@@ -12,12 +12,13 @@ import { About, Goal, Plan, PlanLoading, Promise_ } from './src/screens/Onboardi
 import { Analysing, Camera, Partial, Priming, Result, Search } from './src/screens/Scan';
 import { Alerts, Home, Paywall, ProWelcome } from './src/screens/Home';
 import { Settings, Share_, WatchDetail } from './src/screens/Watch';
+import { Awards } from './src/screens/Awards';
 
 const SCREENS: Record<Route, React.ComponentType> = {
   promise: Promise_, goal: Goal, about: About, planLoading: PlanLoading, plan: Plan,
   priming: Priming, camera: Camera, analysing: Analysing, result: Result, partial: Partial, search: Search,
   paywall: Paywall, proWelcome: ProWelcome, home: Home, alerts: Alerts,
-  watch: WatchDetail, share: Share_, settings: Settings,
+  watch: WatchDetail, share: Share_, settings: Settings, awards: Awards,
 };
 const DARK: Route[] = ['camera', 'analysing', 'proWelcome'];
 
