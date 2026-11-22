@@ -8,7 +8,7 @@ import { TabBar } from './Home';
 import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
-import { LANGS, Lang, fmtDate, t } from '../i18n';
+import { AVAILABLE_LANGS, LANGS, fmtDate, t } from '../i18n';
 
 const SITE = 'https://batuoncel.github.io/crown-app/';
 const PAPERS: { key: NonNullable<Answers['papers']>; label: string }[] = [
@@ -318,6 +318,8 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 export function Settings() {
   const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback, lang, setLanguage } = useStore();
   const [confirm, setConfirm] = useState(false);
+  const [showLangs, setShowLangs] = useState(false);
+  const curLang = LANGS.find(l => l.key === lang) ?? LANGS[0];
   const isOther = currency !== 'USD' && currency !== 'EUR';
   const [showOther, setShowOther] = useState(isOther);
   const [q, setQ] = useState('');
@@ -331,18 +333,29 @@ export function Settings() {
           <Segmented<ThemeName> options={[{ key: 'classic', label: t('Classic') }, { key: 'navy', label: t('Navy') }]} value={theme} onChange={setTheme} />
         </Section>
         <Section label={t('LANGUAGE')}>
-          {LANGS.map((l, i) => {
-            const on = l.key === lang;
-            return (
-              <Pressable key={l.key} onPress={() => { Haptics.selectionAsync(); setLanguage(l.key as Lang); }} accessibilityRole="radio" accessibilityState={{ selected: on }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                  <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{l.native}</Text>
-                  {l.key !== 'en' ? <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.stone }}>{l.name}</Text> : null}
-                  {on ? <Icon name="check" size={18} color={C.green} w={2.4} /> : <View style={{ width: 18 }} />}
-                </View>
-              </Pressable>
-            );
-          })}
+          <Pressable onPress={() => { Haptics.selectionAsync(); setShowLangs(v => !v); }} accessibilityRole="button" accessibilityState={{ expanded: showLangs }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 22 }}>{curLang.flag}</Text>
+              <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 15, color: C.ink }}>{curLang.native}</Text>
+              <View style={{ transform: [{ rotate: showLangs ? '-90deg' : '90deg' }] }}><Icon name="chevron" size={16} color={C.stone} /></View>
+            </View>
+          </Pressable>
+          {showLangs ? (
+            <View style={{ marginTop: 10 }}>
+              {AVAILABLE_LANGS.map(l => {
+                const on = l.key === lang;
+                return (
+                  <Pressable key={l.key} onPress={() => { Haptics.selectionAsync(); setLanguage(l.key); }} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={l.native}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+                      <Text style={{ fontSize: 20, width: 28 }}>{l.flag}</Text>
+                      <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{l.native}</Text>
+                      {on ? <Icon name="check" size={18} color={C.green} w={2.4} /> : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
         </Section>
         <Section label={t('CURRENCY')}>
           <Segmented<Currency>
