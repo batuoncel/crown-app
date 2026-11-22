@@ -43,7 +43,8 @@
           "photosPermission": "Crown uses your photos so you can add a picture of your own watch.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

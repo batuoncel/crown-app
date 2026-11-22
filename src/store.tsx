@@ -9,14 +9,14 @@ export type Route =
   | 'promise' | 'goal' | 'about' | 'planLoading' | 'plan'
   | 'priming' | 'camera' | 'analysing' | 'result' | 'partial' | 'search'
   | 'paywall' | 'proWelcome' | 'home' | 'alerts'
-  | 'watch' | 'share' | 'settings' | 'awards' | 'guide' | 'wishlist';
+  | 'watch' | 'share' | 'settings' | 'awards' | 'guide' | 'wishlist' | 'report';
 
 // paid is stored in USD; papers overrides the onboarding answer for this watch
-export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers']; photo?: string; condition?: Condition; lastService?: string };
+export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers']; photo?: string; condition?: Condition; lastService?: string; serial?: string };
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[]; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -48,6 +48,7 @@ type Store = Persisted & {
   setTheme: (t: ThemeName) => void;
   setCurrencyPref: (c: Currency) => void;
   setLanguage: (l: Lang) => void;
+  setOwnerName: (n: string) => void;
   openWatch: (modelId: string, route?: Route) => void;
   updateWatch: (modelId: string, patch: Partial<Owned>) => void;
 };
@@ -76,7 +77,7 @@ const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
 
 // routes that are safe to resume after the app is closed
-const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards', 'guide', 'wishlist'];
+const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards', 'guide', 'wishlist', 'report'];
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<Persisted>(initial);
@@ -152,6 +153,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTheme: theme => setS(p => ({ ...p, theme })),
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),
     setLanguage: lang => setS(p => ({ ...p, lang })),
+    setOwnerName: ownerName => setS(p => ({ ...p, ownerName })),
     openWatch: (detailId, route = 'watch') => setS(p => ({ ...p, detailId, route })),
     updateWatch: (id, patch) => setS(p => ({ ...p, collection: p.collection.map(o => (o.modelId === id ? { ...o, ...patch } : o)) })),
   };

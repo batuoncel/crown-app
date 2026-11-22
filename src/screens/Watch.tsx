@@ -45,6 +45,7 @@ export function WatchDetail() {
   const owned = useOwned();
   const [range, setRange] = useState<'6M' | '1Y' | '5Y'>('1Y');
   const [paidText, setPaidText] = useState(owned?.paid ? String(Math.round(fromUsd(owned.paid))) : '');
+  const [serialText, setSerialText] = useState(owned?.serial ?? '');
   const [confirmRemove, setConfirmRemove] = useState(false);
   if (!owned) return null;
   const m = byId(owned.modelId);
@@ -84,7 +85,7 @@ export function WatchDetail() {
         <View style={{ alignItems: 'center' }}>
           <Text style={[T.label, { fontSize: 13 }]}>{m.brand.toUpperCase()}</Text>
           <Text style={{ fontFamily: F.serif, ...display(30), lineHeight: 34, color: C.ink, textAlign: 'center' }}>{m.name}</Text>
-          <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {m.material}</Text>
+          <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {t(m.material)}</Text>
         </View>
 
         <Card style={{ padding: 18, marginTop: 18 }}>
@@ -172,6 +173,25 @@ export function WatchDetail() {
           onSet={iso => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); updateWatch(m.id, { lastService: iso }); }}
           onGuide={() => openGuide('service')}
         />
+
+        <Card style={{ padding: 18, marginTop: 12 }}>
+          <Text style={T.label}>{t('SERIAL NUMBER')}</Text>
+          <TextInput
+            value={serialText}
+            onChangeText={s => setSerialText(s.toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 24))}
+            onEndEditing={() => updateWatch(m.id, { serial: serialText.trim() || undefined })}
+            onBlur={() => updateWatch(m.id, { serial: serialText.trim() || undefined })}
+            onSubmitEditing={() => { Keyboard.dismiss(); updateWatch(m.id, { serial: serialText.trim() || undefined }); }}
+            placeholder={t('Engraved on the case, between the lugs or on the back')}
+            placeholderTextColor={C.stone}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            returnKeyType="done"
+            accessibilityLabel={t('Serial number')}
+            style={{ marginTop: 10, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12, fontFamily: F.bold, fontSize: 15, letterSpacing: 1, color: C.ink }}
+          />
+          <Text style={[T.small, { marginTop: 8 }]}>{t('Only stored on this phone. Used in your insurance report.')}</Text>
+        </Card>
 
         <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>{t('In your collection since {date}', { date: fmtDay(owned.addedAt) })}</Text>
         <Button title={t("Share value card")} icon="share" onPress={() => go('share')} style={{ marginTop: 16 }} />

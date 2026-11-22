@@ -270,7 +270,7 @@ export function Result() {
         <Enter delay={150} style={{ alignItems: 'center', paddingHorizontal: 24, marginTop: 16 }}>
           <Text style={[T.label, { fontSize: 13 }]}>{m.brand.toUpperCase()}</Text>
           <Text style={{ fontFamily: F.serif, ...display(32), lineHeight: 36, color: C.ink, textAlign: 'center' }}>{m.name}</Text>
-          <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {m.material}</Text>
+          <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {t(m.material)}</Text>
         </Enter>
         <Enter delay={300} style={{ paddingHorizontal: 24, marginTop: 18 }}>
           <Card style={{ padding: 18, paddingBottom: 14 }}>

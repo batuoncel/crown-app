@@ -282,6 +282,7 @@ export function Home() {
             </View>
           </Pressable>
           <WishlistRow />
+          <ReportRow />
           <GuideCarousel />
           <Text style={[T.small, { fontSize: 11.5, textAlign: 'center', marginTop: 18 }]}>{t("Values are demo data for this prototype.")}</Text>
         </ScrollView>
@@ -302,6 +303,22 @@ export function Home() {
 }
 
 // ---------- Alerts ----------
+function ReportRow() {
+  const { go, pro } = useStore();
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync(); go('report'); }} accessibilityRole="button">
+      <Card style={{ marginTop: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.greenSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="shield" size={22} color={C.green} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={[T.b, { fontSize: 15.5 }]}>{t('Insurance report')}</Text>
+          <Text style={T.small}>{t('Your collection as a PDF, with photos and serial numbers.')}</Text>
+        </View>
+        {pro ? <Icon name="chevron" size={16} color={C.stone} /> : <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} />}
+      </Card>
+    </Pressable>
+  );
+}
+
 // wishlist prices use the "some box and papers" value, i.e. the plain market median
 export const wishPrice = (modelId: string) => valueOf(byId(modelId), 'Some').mid;
 
