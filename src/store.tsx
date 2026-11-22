@@ -17,7 +17,7 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market>; customModels: Model[] };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market>; customModels: Model[]; accessCode?: string };
 
 export type Scan = {
   photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean;
@@ -53,6 +53,7 @@ type Store = Persisted & {
   setCurrencyPref: (c: Currency) => void;
   setLanguage: (l: Lang) => void;
   setOwnerName: (n: string) => void;
+  setAccessCode: (c: string) => void;
   backupData: () => Persisted;
   setMarket: (modelId: string, m: Market) => void;
   markBackedUp: () => void;
@@ -171,6 +172,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),
     setLanguage: lang => setS(p => ({ ...p, lang })),
     setOwnerName: ownerName => setS(p => ({ ...p, ownerName })),
+    setAccessCode: accessCode => setS(p => ({ ...p, accessCode })),
     backupData: () => s,
     setMarket: (id, m) => setS(p => ({ ...p, market: { ...p.market, [id]: m } })),
     markBackedUp: () => setS(p => ({ ...p, lastBackup: new Date().toISOString() })),

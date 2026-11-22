@@ -15,10 +15,10 @@ export type Identified = {
   alternatives: { brand: string; model: string; reference: string }[];
 };
 
-export async function identifyPhoto(photo: string): Promise<Identified> {
+export async function identifyPhoto(photo: string, accessCode = ''): Promise<Identified> {
   const r = await fetch(`${API_BASE}/identify`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Crown-Code': accessCode },
     body: JSON.stringify({ image: photo }),
   });
   if (!r.ok) throw new Error('identify ' + r.status);

@@ -185,7 +185,7 @@ function ConsentSheet({ onAgree, onLater }: { onAgree: () => void; onLater: () =
 
 // ---------- 6b. Analysing ----------
 export function Analysing() {
-  const { go, scan, setScan, answers, scanCount, bumpScan } = useStore();
+  const { go, scan, setScan, answers, scanCount, bumpScan, accessCode } = useStore();
   const [step, setStep] = useState(0);
   const sweep = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -199,8 +199,9 @@ export function Analysing() {
     // live recognition: send the photo to Gemini through the proxy, keep the animation at least 2.5 s
     if (LIVE_SCAN && scan.photo) {
       let alive = true;
-      identifyPhoto(scan.photo)
-        .catch(() => new Promise(r => setTimeout(r, 800)).then(() => identifyPhoto(scan.photo!)))
+      identifyPhoto(scan.photo, accessCode ?? '')
+        // retry once, but not when the access code is wrong
+        .catch((e: Error) => String(e?.message).endsWith('401') ? Promise.reject(e) : new Promise(r => setTimeout(r, 800)).then(() => identifyPhoto(scan.photo!, accessCode ?? '')))
         .then(async res => {
           await new Promise(r => setTimeout(r, Math.max(0, 2500 - (Date.now() - started))));
           if (!alive) return;
@@ -397,8 +398,10 @@ function MatchFeedback({ vote, onVote, onScan, onSearch }: { vote: 'yes' | 'no' 
 function NoMatch() {
   const { go, scan } = useStore();
   const u = scan.unknown;
-  const title = scan.notWatch ? "We couldn't see a watch." : scan.failed ? "We couldn't reach the scanner." : u ? 'We know this one, but not its price yet.' : 'We lost that scan.';
-  const sub = scan.notWatch
+  const locked = scan.failed && scan.error?.endsWith('401');
+  const busy = scan.failed && scan.error?.endsWith('429');
+  const title = locked ? 'Scanning is invite-only for now.' : busy ? 'Too many scans in a row.' : scan.notWatch ? "We couldn't see a watch." : scan.failed ? "We couldn't reach the scanner." : u ? 'We know this one, but not its price yet.' : 'We lost that scan.';
+  const sub = locked ? 'Enter your access code in Settings to scan. You can still find your watch by name.' : busy ? 'Wait a minute, then try again.' : scan.notWatch
     ? 'Fill the frame with the dial, straight on, in soft light.'
     : scan.failed
       ? 'Check your connection and try again. Nothing was saved.'

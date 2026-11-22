@@ -69,7 +69,7 @@ export function clean(items, ref, name) {
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Crown-Code',
 };
 const json = (body, status = 200, extra = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS, ...extra } });
@@ -91,8 +91,22 @@ Rules:
 - "alternatives": up to 3 other likely references when confidence is below 80, otherwise [].
 - Never guess a brand that is not visible or strongly implied by the design. Do not judge whether the watch is genuine.`;
 
+// light per-device limit (per worker instance): at most 6 scans a minute from one IP
+const recent = new Map();
+function tooMany(ip) {
+  const now = Date.now();
+  const list = (recent.get(ip) || []).filter(t => now - t < 60_000);
+  list.push(now);
+  recent.set(ip, list);
+  if (recent.size > 5000) recent.clear();
+  return list.length > 6;
+}
+
 async function identify(req, env) {
   if (!env.GEMINI_API_KEY) return json({ error: 'not-configured' }, 503);
+  // invite-only while ACCESS_CODE is set: the app sends the code the owner typed in Settings
+  if (env.ACCESS_CODE && req.headers.get('X-Crown-Code') !== env.ACCESS_CODE) return json({ error: 'access-code' }, 401);
+  if (tooMany(req.headers.get('CF-Connecting-IP') || 'unknown')) return json({ error: 'slow-down' }, 429);
   let body;
   try { body = await req.json(); } catch { return json({ error: 'bad-json' }, 400); }
   const image = typeof body?.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
