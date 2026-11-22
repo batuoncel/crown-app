@@ -5,7 +5,7 @@ import { C, CURRENCIES, Currency, F, currency as cur, display, fromUsd, isNavy, 
 import { Button, Card, Enter, Icon, LineChart, Pill, RoundButton, Segmented, T, WatchThumb } from '../ui';
 import { pickPhoto } from '../photo';
 import { TabBar } from './Home';
-import { Answers, MONTHS, byId, change12, ownedValue } from '../data';
+import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
 
@@ -37,7 +37,8 @@ function useOwned() {
 
 // ---------- Watch detail ----------
 export function WatchDetail() {
-  const { go, answers, pro, updateWatch, removeWatch } = useStore();
+  const { go, answers, pro, updateWatch, removeWatch, openGuide } = useStore();
+  const [yearText, setYearText] = useState('');
   const { width } = useWindowDimensions();
   const owned = useOwned();
   const [range, setRange] = useState<'6M' | '1Y' | '5Y'>('1Y');
@@ -152,6 +153,22 @@ export function WatchDetail() {
           <Text style={[T.small, { marginTop: 10 }]}>A full set adds about 6%. No box or papers takes off about 7%.</Text>
         </Card>
 
+        <Card style={{ padding: 18, marginTop: 12 }}>
+          <Text style={T.label}>CONDITION</Text>
+          <View style={{ marginTop: 10 }}>
+            <Segmented<Condition> options={CONDITIONS.map(c => ({ key: c, label: c }))} value={owned.condition ?? 'Good'} onChange={c => updateWatch(m.id, { condition: c })} />
+          </View>
+          <Text style={[T.small, { marginTop: 10 }]}>{CONDITION_NOTE[owned.condition ?? 'Good']}</Text>
+        </Card>
+
+        <ServiceCard
+          last={owned.lastService}
+          yearText={yearText}
+          setYearText={setYearText}
+          onSet={iso => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); updateWatch(m.id, { lastService: iso }); }}
+          onGuide={() => openGuide('service')}
+        />
+
         <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>In your collection since {fmtDay(owned.addedAt)}</Text>
         <Button title="Share value card" icon="share" onPress={() => go('share')} style={{ marginTop: 16 }} />
         <Pressable
@@ -169,6 +186,48 @@ export function WatchDetail() {
         </Pressable>
       </ScrollView>
     </View>
+  );
+}
+
+const CONDITION_NOTE: Record<Condition, string> = {
+  Unworn: 'Never worn, stickers on. Adds about 12%.',
+  Excellent: 'Light signs of wear only. Adds about 5%.',
+  Good: 'Normal wear for a watch in use. The market price.',
+  Worn: 'Visible scratches or dents. Takes off about 12%.',
+};
+
+function ServiceCard({ last, yearText, setYearText, onSet, onGuide }: { last?: string; yearText: string; setYearText: (t: string) => void; onSet: (iso: string) => void; onGuide: () => void }) {
+  const due = serviceDue(last);
+  const now = new Date();
+  const isDue = !!due && due <= now;
+  const thisYear = now.getFullYear();
+  const y = parseInt(yearText, 10);
+  const valid = y >= 1950 && y <= thisYear;
+  return (
+    <Card style={{ padding: 18, marginTop: 12, borderColor: isDue ? C.brass : C.line, borderWidth: isDue ? 2 : 1 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={T.label}>SERVICE</Text>
+        {last ? (isDue ? <Pill text="Due now" bg={C.brassSoft} fg={C.brassInk} icon="wrench" /> : <Pill text={`Next around ${due!.getFullYear()}`} bg={C.greenSoft} fg={C.green} />) : null}
+      </View>
+      <Text style={[T.body, { marginTop: 10 }]}>
+        {last ? `Last serviced ${new Date(last).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'When was it last serviced?'}
+      </Text>
+      <Text style={[T.small, { marginTop: 2 }]}>We remind you every {SERVICE_YEARS} years. A service history also helps when you sell.</Text>
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12 }}>
+          <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.stone, marginRight: 6 }}>Year</Text>
+          <TextInput value={yearText} onChangeText={t => setYearText(t.replace(/[^0-9]/g, '').slice(0, 4))} keyboardType="number-pad" placeholder={String(thisYear - 3)} placeholderTextColor={C.stone}
+            accessibilityLabel="Year of last service" style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.ink }}
+            onSubmitEditing={() => { if (valid) { Keyboard.dismiss(); onSet(`${y}-06-15T12:00:00Z`); setYearText(''); } }} />
+        </View>
+        {valid
+          ? <Button title="Save" onPress={() => { Keyboard.dismiss(); onSet(`${y}-06-15T12:00:00Z`); setYearText(''); }} style={{ height: 44, paddingHorizontal: 18 }} />
+          : <Pressable onPress={() => onSet(new Date().toISOString())} accessibilityRole="button" style={{ height: 44, paddingHorizontal: 14, borderRadius: 12, backgroundColor: C.greenSoft, justifyContent: 'center' }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.green }}>Serviced today</Text>
+            </Pressable>}
+      </View>
+      <Pressable onPress={onGuide} hitSlop={8} style={{ marginTop: 12 }}><Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>When does a watch need a service? →</Text></Pressable>
+    </Card>
   );
 }
 
@@ -245,17 +304,24 @@ export function Share_() {
   );
 }
 
-// ---------- Settings ----------
-export function Settings() {
-  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset } = useStore();
-  const [confirm, setConfirm] = useState(false);
-  const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
     <View style={{ marginTop: 22 }}>
       <Text style={[T.label, { marginBottom: 8 }]}>{label}</Text>
       <Card style={{ padding: 16 }}>{children}</Card>
     </View>
   );
-  const eur = CURRENCIES.find(c => c.key === 'EUR')!, tl = CURRENCIES.find(c => c.key === 'TRY')!;
+}
+
+// ---------- Settings ----------
+export function Settings() {
+  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback } = useStore();
+  const [confirm, setConfirm] = useState(false);
+  const isOther = currency !== 'USD' && currency !== 'EUR';
+  const [showOther, setShowOther] = useState(isOther);
+  const [q, setQ] = useState('');
+  const curNow = CURRENCIES.find(c => c.key === currency) ?? CURRENCIES[0];
+  const others = CURRENCIES.filter(c => c.key !== 'USD' && c.key !== 'EUR' && (c.name + ' ' + c.key).toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Settings</Text></View>
@@ -264,8 +330,38 @@ export function Settings() {
           <Segmented<ThemeName> options={[{ key: 'classic', label: 'Classic' }, { key: 'navy', label: 'Navy' }]} value={theme} onChange={setTheme} />
         </Section>
         <Section label="CURRENCY">
-          <Segmented<Currency> options={CURRENCIES.map(c => ({ key: c.key, label: `${c.symbol} ${c.key}` }))} value={currency} onChange={setCurrencyPref} />
-          <Text style={[T.small, { marginTop: 10 }]}>Prices are tracked in US dollars and shown at a fixed demo rate: $1 = €{eur.rate} = ₺{tl.rate}.</Text>
+          <Segmented<Currency>
+            options={[{ key: 'USD', label: '$ USD' }, { key: 'EUR', label: '€ EUR' }, { key: 'OTHER', label: isOther ? `${curNow.key} ▾` : 'Other ▾' }]}
+            value={showOther || isOther ? 'OTHER' : currency}
+            onChange={k => { if (k === 'OTHER') setShowOther(true); else { setShowOther(false); setCurrencyPref(k); } }}
+          />
+          {showOther ? (
+            <View style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 42, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12 }}>
+                <Icon name="search" size={17} color={C.stone} />
+                <TextInput value={q} onChangeText={setQ} placeholder="Search currency" placeholderTextColor={C.stone} autoCorrect={false} style={{ flex: 1, fontFamily: F.medium, fontSize: 15, color: C.ink }} />
+              </View>
+              <View style={{ maxHeight: 280, marginTop: 6 }}>
+                <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                  {others.map(c => {
+                    const on = c.key === currency;
+                    return (
+                      <Pressable key={c.key} onPress={() => { Haptics.selectionAsync(); setCurrencyPref(c.key); }} accessibilityRole="radio" accessibilityState={{ selected: on }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                          <Text style={{ width: 46, fontFamily: F.bold, fontSize: 13.5, color: C.stone }}>{c.key}</Text>
+                          <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{c.name}</Text>
+                          <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>{c.symbol.trim()}</Text>
+                          {on ? <Icon name="check" size={18} color={C.green} w={2.4} /> : <View style={{ width: 18 }} />}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                  {others.length === 0 ? <Text style={[T.small, { paddingVertical: 12 }]}>No currency matches "{q}".</Text> : null}
+                </ScrollView>
+              </View>
+            </View>
+          ) : null}
+          <Text style={[T.small, { marginTop: 10 }]}>{currency === 'USD' ? 'Prices are tracked in US dollars.' : `Prices are tracked in US dollars and shown at a fixed demo rate: $1 = ${curNow.symbol.trim()} ${curNow.rate}.`}</Text>
         </Section>
         <Section label="BOX AND PAPERS">
           <Text style={[T.body, { marginBottom: 10 }]}>Default for new watches</Text>
@@ -286,6 +382,7 @@ export function Settings() {
         <Section label="ABOUT">
           <Text style={T.body}>Crown is a course prototype.</Text>
           <Text style={[T.small, { marginTop: 4 }]}>Prices are demo data, not live market data. Your collection is stored only on this device.</Text>
+          {feedback.yes + feedback.no ? <Text style={[T.small, { marginTop: 4 }]}>Your match feedback: {feedback.yes} right, {feedback.no} wrong.</Text> : null}
           <Pressable
             onPress={() => { if (!confirm) { Haptics.selectionAsync(); setConfirm(true); } else reset(); }}
             style={{ marginTop: 14, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: confirm ? C.downSoft : C.paper, borderWidth: 1, borderColor: confirm ? C.downSoft : C.line }}
@@ -294,7 +391,7 @@ export function Settings() {
             <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>{confirm ? 'Tap again: delete everything and start over' : 'Reset demo'}</Text>
           </Pressable>
         </Section>
-        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>Crown 1.2 · Batu Öncel, Pınar Işıl Şahin, Cem Aksu</Text>
+        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>Crown 1.3 · Made by Batu Öncel</Text>
       </ScrollView>
       <TabBar active="settings" />
     </View>

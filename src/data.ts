@@ -59,15 +59,28 @@ export type Answers = {
   papers: 'Yes' | 'Some' | 'No' | null;
 };
 
+export type Condition = 'Unworn' | 'Excellent' | 'Good' | 'Worn';
+export const CONDITIONS: Condition[] = ['Unworn', 'Excellent', 'Good', 'Worn'];
+export const conditionFactor = (c?: Condition) => (c === 'Unworn' ? 1.12 : c === 'Excellent' ? 1.05 : c === 'Worn' ? 0.88 : 1);
+
 export const papersFactor = (p: Answers['papers']) => (p === 'Yes' ? 1.06 : p === 'Some' ? 1.0 : 0.93);
 
-export const valueOf = (m: Model, papers: Answers['papers']) => {
-  const mid = m.history[m.history.length - 1] * papersFactor(papers);
+export const valueOf = (m: Model, papers: Answers['papers'], condition?: Condition) => {
+  const mid = m.history[m.history.length - 1] * papersFactor(papers) * conditionFactor(condition);
   return { mid, low: mid * (1 - m.spread), high: mid * (1 + m.spread) };
 };
 
 // value of one owned watch (its own box/papers answer wins over the onboarding one)
-export const ownedValue = (o: { modelId: string; papers?: Answers['papers'] }, fallback: Answers['papers']) => valueOf(byId(o.modelId), o.papers ?? fallback);
+export const ownedValue = (o: { modelId: string; papers?: Answers['papers']; condition?: Condition }, fallback: Answers['papers']) => valueOf(byId(o.modelId), o.papers ?? fallback, o.condition);
+
+// service: most brands suggest every 5 to 10 years; we remind at 5
+export const SERVICE_YEARS = 5;
+export const serviceDue = (lastService?: string) => {
+  if (!lastService) return null;
+  const d = new Date(lastService);
+  d.setFullYear(d.getFullYear() + SERVICE_YEARS);
+  return d;
+};
 
 export const change12 = (m: Model) => {
   const a = m.history[0], b = m.history[m.history.length - 1];

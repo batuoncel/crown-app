@@ -14,12 +14,13 @@ import { Alerts, Home, Paywall, ProWelcome } from './src/screens/Home';
 import { Settings, Share_, WatchDetail } from './src/screens/Watch';
 import { Awards } from './src/screens/Awards';
 import { GuideScreen } from './src/screens/Guide';
+import { Wishlist } from './src/screens/Wishlist';
 
 const SCREENS: Record<Route, React.ComponentType> = {
   promise: Promise_, goal: Goal, about: About, planLoading: PlanLoading, plan: Plan,
   priming: Priming, camera: Camera, analysing: Analysing, result: Result, partial: Partial, search: Search,
   paywall: Paywall, proWelcome: ProWelcome, home: Home, alerts: Alerts,
-  watch: WatchDetail, share: Share_, settings: Settings, awards: Awards, guide: GuideScreen,
+  watch: WatchDetail, share: Share_, settings: Settings, awards: Awards, guide: GuideScreen, wishlist: Wishlist,
 };
 const DARK: Route[] = ['camera', 'analysing', 'proWelcome'];
 

@@ -82,11 +82,44 @@ export const display = (size: number) => (themeName === 'navy' ? { fontSize: Mat
 
 // ---------- currency ----------
 // Prices are stored in USD and shown in the chosen currency at a fixed demo rate.
-export type Currency = 'USD' | 'EUR' | 'TRY';
-export const CURRENCIES: { key: Currency; symbol: string; rate: number; sep: string }[] = [
-  { key: 'USD', symbol: '$', rate: 1, sep: ',' },
-  { key: 'EUR', symbol: '€', rate: 0.87, sep: ',' },
-  { key: 'TRY', symbol: '₺', rate: 44, sep: '.' },
+export type Currency = string; // ISO code
+type Cur = { key: Currency; name: string; symbol: string; rate: number; sep: string };
+// Approximate rates per 1 USD, fixed for the demo (not live).
+export const CURRENCIES: Cur[] = [
+  { key: 'USD', name: 'US dollar', symbol: '$', rate: 1, sep: ',' },
+  { key: 'EUR', name: 'Euro', symbol: '€', rate: 0.87, sep: ',' },
+  { key: 'GBP', name: 'British pound', symbol: '£', rate: 0.75, sep: ',' },
+  { key: 'CHF', name: 'Swiss franc', symbol: 'CHF ', rate: 0.8, sep: "'" },
+  { key: 'TRY', name: 'Turkish lira', symbol: '₺', rate: 44, sep: '.' },
+  { key: 'JPY', name: 'Japanese yen', symbol: '¥', rate: 150, sep: ',' },
+  { key: 'CNY', name: 'Chinese yuan', symbol: 'CN¥', rate: 7.1, sep: ',' },
+  { key: 'HKD', name: 'Hong Kong dollar', symbol: 'HK$', rate: 7.8, sep: ',' },
+  { key: 'SGD', name: 'Singapore dollar', symbol: 'S$', rate: 1.3, sep: ',' },
+  { key: 'KRW', name: 'South Korean won', symbol: '₩', rate: 1380, sep: ',' },
+  { key: 'INR', name: 'Indian rupee', symbol: '₹', rate: 87, sep: ',' },
+  { key: 'THB', name: 'Thai baht', symbol: '฿', rate: 33, sep: ',' },
+  { key: 'IDR', name: 'Indonesian rupiah', symbol: 'Rp ', rate: 16300, sep: '.' },
+  { key: 'AED', name: 'UAE dirham', symbol: 'AED ', rate: 3.67, sep: ',' },
+  { key: 'SAR', name: 'Saudi riyal', symbol: 'SAR ', rate: 3.75, sep: ',' },
+  { key: 'QAR', name: 'Qatari riyal', symbol: 'QAR ', rate: 3.64, sep: ',' },
+  { key: 'KWD', name: 'Kuwaiti dinar', symbol: 'KWD ', rate: 0.31, sep: ',' },
+  { key: 'BHD', name: 'Bahraini dinar', symbol: 'BHD ', rate: 0.376, sep: ',' },
+  { key: 'JOD', name: 'Jordanian dinar', symbol: 'JOD ', rate: 0.71, sep: ',' },
+  { key: 'RSD', name: 'Serbian dinar', symbol: 'RSD ', rate: 101, sep: '.' },
+  { key: 'DKK', name: 'Danish krone', symbol: 'kr ', rate: 6.5, sep: '.' },
+  { key: 'NOK', name: 'Norwegian krone', symbol: 'kr ', rate: 10.2, sep: ' ' },
+  { key: 'SEK', name: 'Swedish krona', symbol: 'kr ', rate: 9.6, sep: ' ' },
+  { key: 'CZK', name: 'Czech koruna', symbol: 'Kč ', rate: 21.5, sep: ' ' },
+  { key: 'PLN', name: 'Polish złoty', symbol: 'zł ', rate: 3.7, sep: ' ' },
+  { key: 'HUF', name: 'Hungarian forint', symbol: 'Ft ', rate: 345, sep: ' ' },
+  { key: 'RUB', name: 'Russian ruble', symbol: '₽', rate: 80, sep: ' ' },
+  { key: 'AZN', name: 'Azerbaijani manat', symbol: '₼', rate: 1.7, sep: ',' },
+  { key: 'GEL', name: 'Georgian lari', symbol: '₾', rate: 2.7, sep: ',' },
+  { key: 'AUD', name: 'Australian dollar', symbol: 'A$', rate: 1.53, sep: ',' },
+  { key: 'CAD', name: 'Canadian dollar', symbol: 'C$', rate: 1.38, sep: ',' },
+  { key: 'MXN', name: 'Mexican peso', symbol: 'MX$', rate: 18.7, sep: ',' },
+  { key: 'BRL', name: 'Brazilian real', symbol: 'R$', rate: 5.5, sep: '.' },
+  { key: 'ZAR', name: 'South African rand', symbol: 'R ', rate: 18, sep: ' ' },
 ];
 let cur = CURRENCIES[0];
 export const setCurrency = (c: Currency) => { cur = CURRENCIES.find(x => x.key === c) ?? CURRENCIES[0]; };

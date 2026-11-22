@@ -5,7 +5,7 @@ import { C, F, display, money, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { AWARDS, unlocked } from '../awards';
 import { GuideCarousel } from './Guide';
-import { byId, change12, ownedValue, papersFactor, planSlots } from '../data';
+import { byId, change12, conditionFactor, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
 
 const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -130,8 +130,8 @@ export function TabBar({ active }: { active: Tab }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides } = useStore();
-  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length }).filter(id => !seenAwards.includes(id));
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides, bestStreak, wishes, streak, streakBonus, clearStreakBonus, showStreak } = useStore();
+  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length, streak: bestStreak, wishes: wishes.length }).filter(id => !seenAwards.includes(id));
   const freshAward = fresh.length ? AWARDS.find(x => x.id === fresh[fresh.length - 1]) : undefined;
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
@@ -150,7 +150,7 @@ export function Home() {
   const [range, setRange] = useState<'1M' | '6M' | '1Y' | '5Y'>('1Y');
   const models = collection.map(o => byId(o.modelId));
   const slots = pro ? Infinity : 1;
-  const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + byId(o.modelId).history[i] * papersFactor(o.papers ?? answers.papers), 0));
+  const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + byId(o.modelId).history[i] * papersFactor(o.papers ?? answers.papers) * conditionFactor(o.condition), 0));
   const paidOnes = collection.filter(o => o.paid);
   const paidTotal = paidOnes.reduce((s, o) => s + (o.paid ?? 0), 0);
   const paidNow = paidOnes.reduce((s, o) => s + ownedValue(o, answers.papers).mid, 0);
@@ -167,6 +167,14 @@ export function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {streak > 1 ? (
+          <Pressable onPress={() => { Haptics.selectionAsync(); showStreak(); }} accessibilityRole="button" accessibilityLabel={`${streak}-day streak`}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: C.downSoft }}>
+              <Icon name="flame" size={14} color={C.down} w={2} />
+              <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.down }}>{streak}</Text>
+            </View>
+          </Pressable>
+        ) : null}
         {pro ? <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text="Try Pro" bg={C.greenSoft} fg={C.green} /></Pressable>}
         </View>
       </View>
@@ -280,6 +288,7 @@ export function Home() {
               <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.green }}>{canAdd ? 'Add a watch' : 'Add more watches with Pro'}</Text>
             </View>
           </Pressable>
+          <WishlistRow />
           <GuideCarousel />
           <Text style={[T.small, { fontSize: 11.5, textAlign: 'center', marginTop: 18 }]}>Values are demo data for this prototype.</Text>
         </ScrollView>
@@ -294,23 +303,105 @@ export function Home() {
           </View>
         </Enter>
       ) : null}
+      {streakBonus ? <StreakBonus days={streakBonus} onClose={clearStreakBonus} /> : null}
       <TabBar active="home" />
     </View>
   );
 }
 
 // ---------- Alerts ----------
+function StreakBonus({ days, onClose }: { days: number; onClose: () => void }) {
+  const lit = Math.min(days, 7);
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,8,.55)', alignItems: 'center', justifyContent: 'center', padding: 28, zIndex: 10 }}>
+      <Enter style={{ alignSelf: 'stretch' }}>
+        <View style={{ backgroundColor: C.surface, borderRadius: 28, padding: 26, alignItems: 'center' }}>
+          <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: C.downSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="flame" size={40} color={C.down} w={1.8} /></View>
+          <Text style={[T.eyebrow, { color: C.down, marginTop: 18 }]}>Streak bonus</Text>
+          <Text style={{ fontFamily: F.serif, ...display(56), lineHeight: 62, color: C.ink }}>{days} days</Text>
+          <Text style={[T.sub, { textAlign: 'center', marginTop: 4 }]}>You have checked your collection {days} days in a row. Come back tomorrow to keep it going.</Text>
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: 18 }}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <View key={i} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: i < lit ? C.down : C.paper, borderWidth: 1, borderColor: i < lit ? C.down : C.line }}>
+                {i < lit ? <Icon name="check" size={14} color="#FFFFFF" w={2.6} /> : <Text style={{ fontFamily: F.bold, fontSize: 11, color: C.stone }}>{i + 1}</Text>}
+              </View>
+            ))}
+          </View>
+          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{days >= 7 ? 'Week Streak award unlocked' : `${7 - days} more for the Week Streak award`}</Text>
+          <View style={{ alignSelf: 'stretch', marginTop: 20 }}><Button title="Keep it going" onPress={onClose} /></View>
+        </View>
+      </Enter>
+    </View>
+  );
+}
+
+// wishlist prices use the "some box and papers" value, i.e. the plain market median
+export const wishPrice = (modelId: string) => valueOf(byId(modelId), 'Some').mid;
+
+function WishlistRow() {
+  const { wishes, go } = useStore();
+  const atTarget = wishes.filter(w => w.target && wishPrice(w.modelId) <= w.target).length;
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync(); go('wishlist'); }} accessibilityRole="button">
+      <Card style={{ marginTop: 22, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.downSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="heart" size={22} color={C.down} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={[T.b, { fontSize: 15.5 }]}>Wishlist</Text>
+          <Text style={T.small}>{wishes.length ? `${wishes.length} watch${wishes.length > 1 ? 'es' : ''}${atTarget ? ` · ${atTarget} at your price` : ''}` : 'Save the watch you want next. We watch the price.'}</Text>
+        </View>
+        {atTarget ? <Pill text="Price hit" bg={C.upSoft} fg={C.up} /> : <Icon name="chevron" size={16} color={C.stone} />}
+      </Card>
+    </Pressable>
+  );
+}
+
+// ---------- Alerts ----------
 export function Alerts() {
-  const { collection, answers, pro, go } = useStore();
+  const { collection, answers, pro, go, wishes, openWatch } = useStore();
+  const now = new Date();
+  const due = collection.filter(o => { const d = serviceDue(o.lastService); return d && d <= now; });
+  const hits = wishes.filter(w => w.target && wishPrice(w.modelId) <= w.target);
   const models = collection.map(o => byId(o.modelId));
+  const quiet = !due.length && !hits.length;
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Alerts</Text></View>
       <ScrollView contentContainerStyle={{ padding: 24 }}>
-        <Text style={T.h2}>{models.length ? 'Quiet week.' : 'Nothing to watch yet.'}</Text>
-        <Text style={T.sub}>{models.length ? `No watch has moved more than 5% since you added it. We check every Sunday.` : 'Add a watch and we will tell you when its value moves.'}</Text>
+        <Text style={T.h2}>{!quiet ? 'Worth a look.' : models.length ? 'Quiet week.' : 'Nothing to watch yet.'}</Text>
+        <Text style={T.sub}>{!quiet ? 'A few things need your attention.' : models.length ? 'No watch has moved more than 5% since you added it. We check every Sunday.' : 'Add a watch and we will tell you when its value moves.'}</Text>
+        {hits.map(w => {
+          const m = byId(w.modelId);
+          return (
+            <Pressable key={'w' + w.modelId} onPress={() => go('wishlist')}>
+              <Card style={{ marginTop: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: C.up }}>
+                <Icon name="heart" size={20} color={C.up} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
+                  <Text style={T.small}>Now {money(wishPrice(m.id))}, at or under your price of {money(w.target!)}</Text>
+                </View>
+                <Icon name="chevron" size={16} color={C.stone} />
+              </Card>
+            </Pressable>
+          );
+        })}
+        {due.map(o => {
+          const m = byId(o.modelId);
+          return (
+            <Pressable key={'s' + o.modelId} onPress={() => openWatch(o.modelId)}>
+              <Card style={{ marginTop: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: C.brass }}>
+                <Icon name="wrench" size={20} color={C.brassInk} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[T.b, { fontSize: 15 }]}>Service due: {m.brand} {m.name}</Text>
+                  <Text style={T.small}>Last serviced in {new Date(o.lastService!).getFullYear()}. A service keeps it accurate and protects its value.</Text>
+                </View>
+                <Icon name="chevron" size={16} color={C.stone} />
+              </Card>
+            </Pressable>
+          );
+        })}
+        {models.length ? <Text style={[T.label, { marginTop: 26 }]}>PRICE ALERTS</Text> : null}
         {models.map(m => (
-          <Card key={m.id} style={{ marginTop: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Card key={m.id} style={{ marginTop: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Icon name="bell" size={20} color={pro ? C.green : C.stone} />
             <View style={{ flex: 1 }}>
               <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>

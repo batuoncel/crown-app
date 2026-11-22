@@ -71,7 +71,7 @@ export function Priming() {
 
 // ---------- 6a. Camera ----------
 export function Camera() {
-  const { go, setScan, onboarded } = useStore();
+  const { go, setScan, onboarded, aiConsent, setAiConsent } = useStore();
   const cam = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -140,6 +140,42 @@ export function Camera() {
           <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.nightStone }}>Photos</Text>
         </Pressable>
       </View>
+      {!aiConsent ? <ConsentSheet onAgree={() => { Haptics.selectionAsync(); setAiConsent(true); }} onLater={() => go(onboarded ? 'home' : 'plan')} /> : null}
+    </View>
+  );
+}
+
+// Shown once, before the first scan: what happens to the photo.
+function ConsentSheet({ onAgree, onLater }: { onAgree: () => void; onLater: () => void }) {
+  const rows = [
+    { i: 'scan', t: 'To identify your watch, Crown reads the photo you take. In this prototype it is matched on your phone against demo data.' },
+    { i: 'info', t: 'When live recognition launches, the photo is sent to Google Gemini, a third-party AI service, to identify the model.' },
+    { i: 'trash', t: 'Your photos stay in your collection on this phone. Remove a watch or reset Crown to delete them.' },
+  ];
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,.55)', justifyContent: 'flex-end' }}>
+      <Enter>
+        <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 12 }}>
+          <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.line, marginBottom: 18 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Icon name="eye" size={22} color={C.brassInk} />
+            <Text style={[T.b, { fontSize: 18 }]}>How your photo is used</Text>
+          </View>
+          <View style={{ gap: 14, marginTop: 18 }}>
+            {rows.map(r => (
+              <View key={r.i} style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: C.brassSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name={r.i} size={16} color={C.brassInk} /></View>
+                <Text style={[T.small, { flex: 1, fontSize: 13.5, lineHeight: 19, color: C.ink }]}>{r.t}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ marginTop: 22 }}>
+            <BottomCTA secondary={<Button title="Not now" kind="ghost" onPress={onLater} />}>
+              <Button title="Agree and continue" onPress={onAgree} />
+            </BottomCTA>
+          </View>
+        </View>
+      </Enter>
     </View>
   );
 }
@@ -197,8 +233,9 @@ export function Analysing() {
 
 // ---------- 7. Result (aha) ----------
 export function Result() {
-  const { go, scan, answers, addWatch, onboarded, finishOnboarding, pro } = useStore();
+  const { go, scan, answers, addWatch, onboarded, finishOnboarding, pro, giveFeedback, addWish, wishes } = useStore();
   const [why, setWhy] = useState(false);
+  const [vote, setVote] = useState<'yes' | 'no' | null>(null);
   const m = scan.model;
   if (!m) return <EmptyResult />;
   const v = valueOf(m, answers.papers);
@@ -259,6 +296,38 @@ export function Result() {
               </Text>
             ) : null}
           </Card>
+        </Enter>
+        <Enter delay={450} style={{ paddingHorizontal: 24, marginTop: 12 }}>
+          <Card style={{ padding: 16 }}>
+            {vote === null ? (
+              <>
+                <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Is this the right watch?</Text>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                  {(['yes', 'no'] as const).map(v => (
+                    <Pressable key={v} style={{ flex: 1 }} onPress={() => { Haptics.selectionAsync(); setVote(v); giveFeedback(v === 'yes'); }} accessibilityRole="button">
+                      <View style={{ height: 42, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <View style={{ transform: [{ rotate: v === 'no' ? '180deg' : '0deg' }] }}><Icon name="thumb" size={17} color={C.ink} /></View>
+                        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>{v === 'yes' ? 'Yes' : 'No'}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : vote === 'yes' ? (
+              <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Thanks. That helps us match better.</Text>
+            ) : (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Sorry about that. Find the right model?</Text>
+                <Pressable onPress={() => go('search')} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.green, marginTop: 8 }}>Search by name or reference</Text></Pressable>
+              </View>
+            )}
+          </Card>
+          {onboarded ? (
+            <Pressable onPress={() => { Haptics.selectionAsync(); addWish(m); go('wishlist'); }} hitSlop={8} style={{ alignSelf: 'center', marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="heart" size={15} color={C.down} />
+              <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.down }}>{wishes.some(w => w.modelId === m.id) ? 'On your wishlist' : 'Not yours yet? Add to wishlist'}</Text>
+            </Pressable>
+          ) : null}
         </Enter>
       </ScrollView>
       <BottomCTA secondary={<Button title="Not my watch" kind="ghost" onPress={() => go('search')} />}>
@@ -327,13 +396,19 @@ export function Search() {
   const { go, setScan, onboarded } = useStore();
   const [q, setQ] = useState('');
   const list = MODELS.filter(m => (m.brand + ' ' + m.name + ' ' + m.ref).toLowerCase().includes(q.trim().toLowerCase()));
-  const { scan } = useStore();
-  const pick = (m: Model) => { Haptics.selectionAsync(); setScan({ photo: scan.photo, model: m, confirmed: true }); go('result'); };
+  const { scan, searchFor, setSearchFor, addWish } = useStore();
+  const wish = searchFor === 'wish';
+  const pick = (m: Model) => {
+    Haptics.selectionAsync();
+    if (wish) { addWish(m); setSearchFor('collection'); go('wishlist'); return; }
+    setScan({ photo: scan.photo, model: m, confirmed: true });
+    go('result');
+  };
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, height: 44 }}>
-        <RoundButton icon="back" onPress={() => go(onboarded ? 'home' : 'priming')} label="Back" />
-        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Find your watch</Text>
+        <RoundButton icon="back" onPress={() => { if (wish) { setSearchFor('collection'); go('wishlist'); } else go(onboarded ? 'home' : 'priming'); }} label="Back" />
+        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{wish ? 'Add to wishlist' : 'Find your watch'}</Text>
       </View>
       <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 50, borderRadius: 14, backgroundColor: C.surface, borderWidth: 1, borderColor: C.line, paddingHorizontal: 14 }}>

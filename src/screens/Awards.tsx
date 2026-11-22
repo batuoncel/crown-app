@@ -28,8 +28,8 @@ function Medal({ a, on, size = 64 }: { a: Award; on: boolean; size?: number }) {
 }
 
 export function Awards() {
-  const { collection, answers, scanCount, shared, seenAwards, markAwardsSeen, readGuides } = useStore();
-  const ctx: AwardCtx = { scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length };
+  const { collection, answers, scanCount, shared, seenAwards, markAwardsSeen, readGuides, bestStreak, wishes } = useStore();
+  const ctx: AwardCtx = { scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length, streak: bestStreak, wishes: wishes.length };
   const done = unlocked(ctx);
   // remember which ones are new on this visit, then mark them seen
   const fresh = useRef(done.filter(id => !seenAwards.includes(id))).current;
