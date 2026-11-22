@@ -9,14 +9,14 @@ export type Route =
   | 'promise' | 'goal' | 'about' | 'planLoading' | 'plan'
   | 'priming' | 'camera' | 'analysing' | 'result' | 'partial' | 'search'
   | 'paywall' | 'proWelcome' | 'home' | 'alerts'
-  | 'watch' | 'share' | 'settings' | 'awards' | 'guide' | 'wishlist' | 'report';
+  | 'watch' | 'share' | 'settings' | 'guide' | 'wishlist' | 'report';
 
 // paid is stored in USD; papers overrides the onboarding answer for this watch
 export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: Answers['papers']; photo?: string; condition?: Condition; lastService?: string; serial?: string };
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
-type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[]; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string };
+type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -29,7 +29,6 @@ type Store = Persisted & {
   setScan: (s: Scan) => void;
   addWatch: (m: Model, photo?: string) => void;
   bumpShare: () => void;
-  markAwardsSeen: (ids: string[]) => void;
   searchFor: 'collection' | 'wish';
   setSearchFor: (v: 'collection' | 'wish') => void;
   addWish: (m: Model) => void;
@@ -49,6 +48,9 @@ type Store = Persisted & {
   setCurrencyPref: (c: Currency) => void;
   setLanguage: (l: Lang) => void;
   setOwnerName: (n: string) => void;
+  backupData: () => Persisted;
+  markBackedUp: () => void;
+  restoreBackup: (data: Record<string, unknown>) => void;
   openWatch: (modelId: string, route?: Route) => void;
   updateWatch: (modelId: string, patch: Partial<Owned>) => void;
 };
@@ -64,7 +66,6 @@ const initial: Persisted = {
   theme: 'navy',
   currency: 'USD',
   shared: 0,
-  seenAwards: [],
   readGuides: [],
   wishes: [],
   aiConsent: false,
@@ -136,7 +137,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     openGuide: guideId => setS(p => ({ ...p, guideId, route: 'guide' })),
     markGuideRead: id => setS(p => (p.readGuides.includes(id) ? p : { ...p, readGuides: [...p.readGuides, id] })),
     bumpShare: () => setS(p => ({ ...p, shared: p.shared + 1 })),
-    markAwardsSeen: ids => setS(p => (ids.every(i => p.seenAwards.includes(i)) ? p : { ...p, seenAwards: [...new Set([...p.seenAwards, ...ids])] })),
     removeWatch: id => setS(p => ({ ...p, collection: p.collection.filter(o => o.modelId !== id) })),
     restoreWatch: (o, index) => setS(p => {
       const c = p.collection.filter(x => x.modelId !== o.modelId);
@@ -154,6 +154,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),
     setLanguage: lang => setS(p => ({ ...p, lang })),
     setOwnerName: ownerName => setS(p => ({ ...p, ownerName })),
+    backupData: () => s,
+    markBackedUp: () => setS(p => ({ ...p, lastBackup: new Date().toISOString() })),
+    // a restored backup replaces everything except this device's look (theme, language, currency)
+    restoreBackup: data => setS(p => ({ ...initial, ...(data as Partial<Persisted>), theme: p.theme, lang: p.lang, currency: p.currency, onboarded: true, route: 'home' })),
     openWatch: (detailId, route = 'watch') => setS(p => ({ ...p, detailId, route })),
     updateWatch: (id, patch) => setS(p => ({ ...p, collection: p.collection.map(o => (o.modelId === id ? { ...o, ...patch } : o)) })),
   };

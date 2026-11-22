@@ -7,6 +7,7 @@ import { byId, change12 } from '../data';
 import { Wish, useStore } from '../store';
 import { wishPrice } from './Home';
 import { BuySignalLine } from './Signal';
+import { TabBar } from './Home';
 import { t } from '../i18n';
 
 function WishCard({ w }: { w: Wish }) {
@@ -93,6 +94,7 @@ export function Wishlist() {
         )}
         {wishes.length ? <Text style={[T.small, { textAlign: 'center', marginTop: 18, fontSize: 12 }]}>{t("Market price is the median for a watch with some box and papers. Demo data.")}</Text> : null}
       </ScrollView>
+      <TabBar active="wishlist" />
     </View>
   );
 }

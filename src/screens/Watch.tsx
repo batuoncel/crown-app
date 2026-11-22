@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Keyboard, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Image, Keyboard, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { C, CURRENCIES, Currency, F, currency as cur, display, fromUsd, isNavy, money, num, pct, toUsd } from '../theme';
 import { Button, Card, Enter, Icon, LineChart, Pill, RoundButton, Segmented, T, WatchThumb } from '../ui';
 import { pickPhoto } from '../photo';
+import { pickBackup, saveBackup } from '../backup';
 import { TabBar } from './Home';
 import { SellSignalCard } from './Signal';
 import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
@@ -12,6 +13,7 @@ import { ThemeName } from '../theme';
 import { AVAILABLE_LANGS, LANGS, fmtDate, locale, t } from '../i18n';
 
 const SITE = 'https://batuoncel.github.io/crown-app/';
+const LEGAL = SITE;
 const PAPERS: { key: NonNullable<Answers['papers']>; label: string }[] = [
   { key: 'Yes', label: 'Full set' },
   { key: 'Some', label: 'Some' },
@@ -349,9 +351,11 @@ const curName = (c: { key: string; name: string }) => {
 
 // ---------- Settings ----------
 export function Settings() {
-  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback, lang, setLanguage } = useStore();
+  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback, lang, setLanguage, backupData, markBackedUp, restoreBackup, lastBackup, collection } = useStore();
   const [confirm, setConfirm] = useState(false);
   const [showLangs, setShowLangs] = useState(false);
+  const [backupNote, setBackupNote] = useState('');
+  const [confirmRestore, setConfirmRestore] = useState<Record<string, unknown> | null>(null);
   const curLang = LANGS.find(l => l.key === lang) ?? LANGS[0];
   const isOther = currency !== 'USD' && currency !== 'EUR';
   const [showOther, setShowOther] = useState(isOther);
@@ -389,6 +393,36 @@ export function Settings() {
               })}
             </View>
           ) : null}
+        </Section>
+        <Section label="BACKUP">
+          <Text style={T.body}>Keep a copy of your collection</Text>
+          <Text style={[T.small, { marginTop: 4 }]}>Saves one file with every watch, photo, serial number and price. Keep it in iCloud Drive or Files, and restore it on a new phone.</Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <Pressable style={{ flex: 1 }} accessibilityRole="button" onPress={async () => {
+              setBackupNote('');
+              try { await saveBackup(backupData()); markBackedUp(); setBackupNote('Backup saved.'); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }
+              catch { setBackupNote('Could not save the backup. Try again.'); }
+            }}>
+              <View style={{ height: 44, borderRadius: 12, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.onPrimary }}>Save backup</Text></View>
+            </Pressable>
+            <Pressable style={{ flex: 1 }} accessibilityRole="button" onPress={async () => {
+              setBackupNote('');
+              try { const d = await pickBackup(); if (d) setConfirmRestore(d); }
+              catch { setBackupNote('That file is not a Crown backup.'); }
+            }}>
+              <View style={{ height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>Restore</Text></View>
+            </Pressable>
+          </View>
+          {confirmRestore ? (
+            <View style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: C.downSoft }}>
+              <Text style={[T.body, { fontSize: 14 }]}>Replace your {collection.length} watch{collection.length === 1 ? '' : 'es'} with the {(confirmRestore.collection as unknown[]).length} in this backup?</Text>
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
+                <Pressable onPress={() => { restoreBackup(confirmRestore); setConfirmRestore(null); }} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>Replace</Text></Pressable>
+                <Pressable onPress={() => setConfirmRestore(null)} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>Cancel</Text></Pressable>
+              </View>
+            </View>
+          ) : null}
+          <Text style={[T.small, { marginTop: 10, fontSize: 12 }]}>{backupNote || (lastBackup ? 'Last backup: ' + fmtDate(new Date(lastBackup), { day: 'numeric', month: 'short', year: 'numeric' }) : 'No backup yet.')}</Text>
         </Section>
         <Section label={t('CURRENCY')}>
           <Segmented<Currency>
@@ -443,6 +477,10 @@ export function Settings() {
         <Section label={t("ABOUT")}>
           <Text style={T.body}>{t("Crown is a course prototype.")}</Text>
           <Text style={[T.small, { marginTop: 4 }]}>{t("Prices are demo data, not live market data. Your collection is stored only on this device.")}</Text>
+          <View style={{ flexDirection: 'row', gap: 18, marginTop: 10 }}>
+            <Pressable onPress={() => Linking.openURL(LEGAL + 'privacy.html')} hitSlop={8} accessibilityRole="link"><Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.green }}>Privacy Policy</Text></Pressable>
+            <Pressable onPress={() => Linking.openURL(LEGAL + 'terms.html')} hitSlop={8} accessibilityRole="link"><Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.green }}>Terms of Use</Text></Pressable>
+          </View>
           {feedback.yes + feedback.no ? <Text style={[T.small, { marginTop: 4 }]}>{t('Your match feedback: {a} right, {b} wrong.', { a: feedback.yes, b: feedback.no })}</Text> : null}
           <Pressable
             onPress={() => { if (!confirm) { Haptics.selectionAsync(); setConfirm(true); } else reset(); }}

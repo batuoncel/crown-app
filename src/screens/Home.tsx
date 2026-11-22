@@ -3,7 +3,6 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-na
 import * as Haptics from 'expo-haptics';
 import { C, F, display, money, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
-import { AWARDS, unlocked } from '../awards';
 import { GuideCarousel } from './Guide';
 import { byId, change12, conditionFactor, marketSignal, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
@@ -87,7 +86,7 @@ export function ProWelcome() {
 }
 
 // ---------- 9. Home ----------
-type Tab = 'home' | 'awards' | 'alerts' | 'settings';
+type Tab = 'home' | 'wishlist' | 'alerts' | 'settings';
 export function TabBar({ active }: { active: Tab }) {
   const { go } = useStore();
   const TabItem = ({ id, icon, label }: { id: Tab; icon: string; label: string }) => (
@@ -99,7 +98,7 @@ export function TabBar({ active }: { active: Tab }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingTop: 10, paddingBottom: 6, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.paper }}>
       <TabItem id="home" icon="watch" label={t("Collection")} />
-      <TabItem id="awards" icon="medal" label={t("Awards")} />
+      <TabItem id="wishlist" icon="heart" label={t("Wishlist")} />
       <Pressable onPress={() => go('priming')} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="button" accessibilityLabel={t("Scan a watch")}>
         <View style={{ width: 54, height: 54, marginTop: -24, borderRadius: 27, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center', shadowColor: C.green, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } }}><Icon name="scan" size={24} color={C.onPrimary} /></View>
         <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.stone }}>{t("Scan")}</Text>
@@ -113,9 +112,7 @@ export function TabBar({ active }: { active: Tab }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides, wishes } = useStore();
-  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length, wishes: wishes.length }).filter(id => !seenAwards.includes(id));
-  const freshAward = fresh.length ? AWARDS.find(x => x.id === fresh[fresh.length - 1]) : undefined;
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch } = useStore();
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
   const [undo, setUndo] = useState<{ owned: (typeof collection)[number]; index: number; name: string } | null>(null);
@@ -150,7 +147,7 @@ export function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        {pro ? <Pill text={t("Pro")} bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text={t("Try Pro")} bg={C.greenSoft} fg={C.green} /></Pressable>}
+        {pro ? <Pill text={t("Pro")} bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')} hitSlop={12} style={{ paddingVertical: 6 }} accessibilityRole="button"><Pill text={t("Try Pro")} bg={C.greenSoft} fg={C.green} /></Pressable>}
         </View>
       </View>
       {models.length === 0 ? (
@@ -162,20 +159,6 @@ export function Home() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 18, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-          {freshAward ? (
-            <Pressable onPress={() => go('awards')} accessibilityRole="button">
-              <Enter style={{ marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingRight: 14, borderRadius: 16, backgroundColor: C.brassSoft }}>
-                  <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.brass, alignItems: 'center', justifyContent: 'center' }}><Icon name={freshAward.icon} size={19} color="#FFFFFF" w={2} /></View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 11.5, letterSpacing: 1, color: C.brassInk }}>{fresh.length > 1 ? t('{n} NEW AWARDS', { n: fresh.length }) : t('NEW AWARD')}</Text>
-                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.ink }}>{t(freshAward.name)}</Text>
-                  </View>
-                  <Icon name="chevron" size={16} color={C.brassInk} />
-                </View>
-              </Enter>
-            </Pressable>
-          ) : null}
           <Text style={T.label}>{t("YOUR COLLECTION")}</Text>
           <CountUp to={total} style={{ fontFamily: F.serif, ...display(52), lineHeight: 58, color: C.ink }} />
           <Text style={{ fontFamily: F.bold, fontSize: 14, color: delta >= 0 ? C.up : C.down }}>
