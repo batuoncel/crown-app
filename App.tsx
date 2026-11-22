@@ -71,7 +71,48 @@ function Gallery() {
 }
 const GALLERY = Platform.OS === 'web' && typeof window !== 'undefined' && window.location.search.includes('gallery');
 
+// Web: a home-screen web app on iOS can keep showing an old build (cached page, app resumed
+// from the background). On launch and whenever it comes back to the foreground, fetch the page
+// fresh and reload if the published bundle changed.
+function useWebUpdateCheck() {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const BUNDLE = /_expo\/static\/js\/web\/[^"']+\.js/;
+    const current = Array.from(document.scripts).map(s => s.src).find(src => BUNDLE.test(src));
+    if (!current) return; // dev server: no hashed bundle
+    let busy = false;
+    const check = async () => {
+      if (busy) return;
+      busy = true;
+      try {
+        const base = window.location.pathname.replace(/[^/]*$/, '');
+        const html = await (await fetch(`${base}?v=${Date.now()}`, { cache: 'no-store' })).text();
+        const latest = html.match(BUNDLE)?.[0];
+        if (latest && !current.includes(latest)) {
+          // at most one reload per published build, so a briefly stale CDN copy can't cause a loop
+          const key = 'crown:reloadedFor';
+          let seen: string | null = null;
+          try { seen = sessionStorage.getItem(key); } catch {}
+          if (seen !== latest) {
+            try { sessionStorage.setItem(key, latest); } catch {}
+            window.location.reload();
+          }
+        }
+      } catch {
+        // offline: keep the current build
+      } finally {
+        busy = false;
+      }
+    };
+    check();
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+}
+
 export default function App() {
+  useWebUpdateCheck();
   const [loaded, fontError] = useFonts({ InstrumentSerif_400Regular, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold });
   // Don't block on fonts: in-app browsers can stall or fail the first font load. Fall back after a short wait.
   const [timedOut, setTimedOut] = useState(false);
