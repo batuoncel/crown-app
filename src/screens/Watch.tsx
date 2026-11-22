@@ -8,7 +8,7 @@ import { TabBar } from './Home';
 import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
-import { AVAILABLE_LANGS, LANGS, fmtDate, t } from '../i18n';
+import { AVAILABLE_LANGS, LANGS, fmtDate, locale, t } from '../i18n';
 
 const SITE = 'https://batuoncel.github.io/crown-app/';
 const PAPERS: { key: NonNullable<Answers['papers']>; label: string }[] = [
@@ -314,6 +314,16 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+// Currency name in the current language (from the platform's Intl data); English if unavailable.
+const curName = (c: { key: string; name: string }) => {
+  try {
+    const n = new (Intl as any).DisplayNames([locale()], { type: 'currency' }).of(c.key) as string | undefined;
+    return n ? n.charAt(0).toLocaleUpperCase(locale()) + n.slice(1) : c.name;
+  } catch {
+    return c.name;
+  }
+};
+
 // ---------- Settings ----------
 export function Settings() {
   const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback, lang, setLanguage } = useStore();
@@ -324,7 +334,7 @@ export function Settings() {
   const [showOther, setShowOther] = useState(isOther);
   const [q, setQ] = useState('');
   const curNow = CURRENCIES.find(c => c.key === currency) ?? CURRENCIES[0];
-  const others = CURRENCIES.filter(c => c.key !== 'USD' && c.key !== 'EUR' && (c.name + ' ' + c.key).toLowerCase().includes(q.trim().toLowerCase()));
+  const others = CURRENCIES.filter(c => c.key !== 'USD' && c.key !== 'EUR' && (curName(c) + ' ' + c.name + ' ' + c.key).toLocaleLowerCase().includes(q.trim().toLocaleLowerCase()));
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t("Settings")}</Text></View>
@@ -377,7 +387,7 @@ export function Settings() {
                       <Pressable key={c.key} onPress={() => { Haptics.selectionAsync(); setCurrencyPref(c.key); }} accessibilityRole="radio" accessibilityState={{ selected: on }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
                           <Text style={{ width: 46, fontFamily: F.bold, fontSize: 13.5, color: C.stone }}>{c.key}</Text>
-                          <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{c.name}</Text>
+                          <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{curName(c)}</Text>
                           <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>{c.symbol.trim()}</Text>
                           {on ? <Icon name="check" size={18} color={C.green} w={2.4} /> : <View style={{ width: 18 }} />}
                         </View>
