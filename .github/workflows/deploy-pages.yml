@@ -27,6 +27,8 @@ jobs:
       - run: npx expo export --platform web
       # GitHub Pages serves 404.html for unknown paths; reuse the app shell
       - run: cp dist/index.html dist/404.html
+      # static pages (privacy policy, terms of use) served next to the app
+      - run: cp -r public/. dist/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
