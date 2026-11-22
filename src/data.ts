@@ -69,8 +69,14 @@ export const conditionFactor = (c?: Condition) => (c === 'Unworn' ? 1.12 : c ===
 
 export const papersFactor = (p: Answers['papers']) => (p === 'Yes' ? 1.06 : p === 'Some' ? 1.0 : 0.93);
 
+// live eBay asking prices by model id (filled by the store when real data arrives)
+export const LIVE: Record<string, { median: number; p25: number; p75: number }> = {};
+
 export const valueOf = (m: Model, papers: Answers['papers'], condition?: Condition) => {
-  const mid = m.history[m.history.length - 1] * papersFactor(papers) * conditionFactor(condition);
+  const f = papersFactor(papers) * conditionFactor(condition);
+  const live = LIVE[m.id];
+  if (live) return { mid: live.median * f, low: live.p25 * f, high: live.p75 * f };
+  const mid = m.history[m.history.length - 1] * f;
   return { mid, low: mid * (1 - m.spread), high: mid * (1 + m.spread) };
 };
 

@@ -7,7 +7,8 @@ import { pickPhoto } from '../photo';
 import { pickBackup, saveBackup } from '../backup';
 import { TabBar } from './Home';
 import { SellSignalCard } from './Signal';
-import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
+import { MarketCard } from './MarketCard';
+import { Answers, CONDITIONS, LIVE, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
 import { AVAILABLE_LANGS, LANGS, fmtDate, locale, t } from '../i18n';
@@ -119,7 +120,10 @@ export function WatchDetail() {
           {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>{t("Demo data covers 12 months.")}</Text> : null}
         </Card>
 
-        <SellSignalCard m={m} factor={v.mid / m.history[12]} />
+        <MarketCard m={m} paid={owned.paid} />
+
+        {/* the trend signal needs price history; live eBay data has none yet */}
+        {LIVE[m.id] ? null : <SellSignalCard m={m} factor={v.mid / m.history[12]} />}
 
         <Card style={{ padding: 18, marginTop: 12 }}>
           <Text style={T.label}>{t("WHAT YOU PAID")}</Text>

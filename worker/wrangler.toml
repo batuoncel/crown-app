@@ -1,0 +1,10 @@
+name = "crown-market"
+main = "market.js"
+compatibility_date = "2026-11-01"
+
+# Secrets (never commit them):
+#   npx wrangler secret put EBAY_CLIENT_ID
+#   npx wrangler secret put EBAY_CLIENT_SECRET
+#   npx wrangler secret put EBAY_CAMPAIGN_ID   (optional, eBay Partner Network)
+# Deploy:
+#   npx wrangler deploy

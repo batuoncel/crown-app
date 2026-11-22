@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Answers, Condition, Model } from './data';
+import { Answers, Condition, LIVE, Model } from './data';
+import type { Market } from './market';
 import { Currency, setCurrency, ThemeName } from './theme';
 import { Lang, setLang } from './i18n';
 import { applyTheme } from './ui';
@@ -16,7 +17,7 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market> };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -49,6 +50,7 @@ type Store = Persisted & {
   setLanguage: (l: Lang) => void;
   setOwnerName: (n: string) => void;
   backupData: () => Persisted;
+  setMarket: (modelId: string, m: Market) => void;
   markBackedUp: () => void;
   restoreBackup: (data: Record<string, unknown>) => void;
   openWatch: (modelId: string, route?: Route) => void;
@@ -71,6 +73,13 @@ const initial: Persisted = {
   aiConsent: false,
   feedback: { yes: 0, no: 0 },
   lang: 'en',
+  market: {},
+};
+
+// only real eBay data feeds values; sample listings never do
+const syncLive = (market: Record<string, Market>) => {
+  for (const k of Object.keys(LIVE)) delete LIVE[k];
+  for (const [id, m] of Object.entries(market)) if (m.source === 'ebay' && m.median && m.p25 && m.p75 && m.count >= 3) LIVE[id] = { median: m.median, p25: m.p25, p75: m.p75 };
 };
 
 
@@ -88,6 +97,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const applied = useRef<ThemeName | null>(null);
   setCurrency(s.currency); // cheap; keeps money() in sync before children render
   setLang(s.lang);
+  syncLive(s.market ?? {});
   if (applied.current !== s.theme) {
     applyTheme(s.theme); // before children render, so they read the right palette
     applied.current = s.theme;
@@ -155,6 +165,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setLanguage: lang => setS(p => ({ ...p, lang })),
     setOwnerName: ownerName => setS(p => ({ ...p, ownerName })),
     backupData: () => s,
+    setMarket: (id, m) => setS(p => ({ ...p, market: { ...p.market, [id]: m } })),
     markBackedUp: () => setS(p => ({ ...p, lastBackup: new Date().toISOString() })),
     // a restored backup replaces everything except this device's look (theme, language, currency)
     restoreBackup: data => setS(p => ({ ...initial, ...(data as Partial<Persisted>), theme: p.theme, lang: p.lang, currency: p.currency, onboarded: true, route: 'home' })),
