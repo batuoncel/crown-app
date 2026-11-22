@@ -61,7 +61,7 @@ const initial: Persisted = {
   onboarded: false,
   scanCount: 0,
   route: 'promise',
-  theme: 'classic',
+  theme: 'navy',
   currency: 'USD',
   shared: 0,
   seenAwards: [],
