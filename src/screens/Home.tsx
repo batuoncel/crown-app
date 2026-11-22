@@ -5,7 +5,7 @@ import { C, F, display, money, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { AWARDS, unlocked } from '../awards';
 import { GuideCarousel } from './Guide';
-import { byId, change12, conditionFactor, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
+import { byId, change12, conditionFactor, marketSignal, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
 import { fmtDate as fmtLocalDate, t } from '../i18n';
 
@@ -131,8 +131,8 @@ export function TabBar({ active }: { active: Tab }) {
 const RANGES = { '1M': 2, '6M': 7, '1Y': 13 } as const;
 
 export function Home() {
-  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides, bestStreak, wishes, streak, streakBonus, clearStreakBonus, showStreak } = useStore();
-  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length, streak: bestStreak, wishes: wishes.length }).filter(id => !seenAwards.includes(id));
+  const { go, collection, answers, pro, reset, removeWatch, restoreWatch, openWatch, scanCount, shared, seenAwards, readGuides, wishes } = useStore();
+  const fresh = unlocked({ scans: scanCount, collection, papers: answers.papers, shared, read: readGuides.length, wishes: wishes.length }).filter(id => !seenAwards.includes(id));
   const freshAward = fresh.length ? AWARDS.find(x => x.id === fresh[fresh.length - 1]) : undefined;
   const { width } = useWindowDimensions();
   const [editing, setEditing] = useState(false);
@@ -168,14 +168,6 @@ export function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        {streak > 1 ? (
-          <Pressable onPress={() => { Haptics.selectionAsync(); showStreak(); }} accessibilityRole="button" accessibilityLabel={t('{n}-day streak', { n: streak })}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: C.downSoft }}>
-              <Icon name="flame" size={14} color={C.down} w={2} />
-              <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.down }}>{streak}</Text>
-            </View>
-          </Pressable>
-        ) : null}
         {pro ? <Pill text={t("Pro")} bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text={t("Try Pro")} bg={C.greenSoft} fg={C.green} /></Pressable>}
         </View>
       </View>
@@ -304,38 +296,12 @@ export function Home() {
           </View>
         </Enter>
       ) : null}
-      {streakBonus ? <StreakBonus days={streakBonus} onClose={clearStreakBonus} /> : null}
       <TabBar active="home" />
     </View>
   );
 }
 
 // ---------- Alerts ----------
-function StreakBonus({ days, onClose }: { days: number; onClose: () => void }) {
-  const lit = Math.min(days, 7);
-  return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,8,.55)', alignItems: 'center', justifyContent: 'center', padding: 28, zIndex: 10 }}>
-      <Enter style={{ alignSelf: 'stretch' }}>
-        <View style={{ backgroundColor: C.surface, borderRadius: 28, padding: 26, alignItems: 'center' }}>
-          <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: C.downSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="flame" size={40} color={C.down} w={1.8} /></View>
-          <Text style={[T.eyebrow, { color: C.down, marginTop: 18 }]}>{t("Streak bonus")}</Text>
-          <Text style={{ fontFamily: F.serif, ...display(56), lineHeight: 62, color: C.ink }}>{t('{n} days', { n: days })}</Text>
-          <Text style={[T.sub, { textAlign: 'center', marginTop: 4 }]}>{t('You have checked your collection {n} days in a row. Come back tomorrow to keep it going.', { n: days })}</Text>
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 18 }}>
-            {Array.from({ length: 7 }, (_, i) => (
-              <View key={i} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: i < lit ? C.down : C.paper, borderWidth: 1, borderColor: i < lit ? C.down : C.line }}>
-                {i < lit ? <Icon name="check" size={14} color="#FFFFFF" w={2.6} /> : <Text style={{ fontFamily: F.bold, fontSize: 11, color: C.stone }}>{i + 1}</Text>}
-              </View>
-            ))}
-          </View>
-          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{days >= 7 ? t('Week Streak award unlocked') : t('{n} more for the Week Streak award', { n: 7 - days })}</Text>
-          <View style={{ alignSelf: 'stretch', marginTop: 20 }}><Button title={t("Keep it going")} onPress={onClose} /></View>
-        </View>
-      </Enter>
-    </View>
-  );
-}
-
 // wishlist prices use the "some box and papers" value, i.e. the plain market median
 export const wishPrice = (modelId: string) => valueOf(byId(modelId), 'Some').mid;
 
@@ -363,7 +329,9 @@ export function Alerts() {
   const due = collection.filter(o => { const d = serviceDue(o.lastService); return d && d <= now; });
   const hits = wishes.filter(w => w.target && wishPrice(w.modelId) <= w.target);
   const models = collection.map(o => byId(o.modelId));
-  const quiet = !due.length && !hits.length;
+  // watches near their 12-month high: shown to everyone, first for people who said they want to sell
+  const sellNow = collection.filter(o => marketSignal(byId(o.modelId)).sell === 'good');
+  const quiet = !due.length && !hits.length && !sellNow.length;
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t("Alerts")}</Text></View>
@@ -379,6 +347,21 @@ export function Alerts() {
                 <View style={{ flex: 1 }}>
                   <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
                   <Text style={T.small}>{t('Now {now}, at or under your price of {target}', { now: money(wishPrice(m.id)), target: money(w.target!) })}</Text>
+                </View>
+                <Icon name="chevron" size={16} color={C.stone} />
+              </Card>
+            </Pressable>
+          );
+        })}
+        {sellNow.map(o => {
+          const m = byId(o.modelId);
+          return (
+            <Pressable key={'g' + o.modelId} onPress={() => openWatch(o.modelId)}>
+              <Card style={{ marginTop: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: C.up }}>
+                <Icon name="chart" size={20} color={C.up} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[T.b, { fontSize: 15 }]}>{t('Good time to sell: {name}', { name: `${m.brand} ${m.name}` })}</Text>
+                  <Text style={T.small}>{t('Near its 12-month high. Now {value}.', { value: money(ownedValue(o, answers.papers).mid) })}</Text>
                 </View>
                 <Icon name="chevron" size={16} color={C.stone} />
               </Card>

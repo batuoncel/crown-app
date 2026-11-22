@@ -16,7 +16,7 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[]; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lastOpen?: string; streak: number; bestStreak: number; lang: Lang };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -30,9 +30,6 @@ type Store = Persisted & {
   addWatch: (m: Model, photo?: string) => void;
   bumpShare: () => void;
   markAwardsSeen: (ids: string[]) => void;
-  streakBonus: number | null;
-  clearStreakBonus: () => void;
-  showStreak: () => void;
   searchFor: 'collection' | 'wish';
   setSearchFor: (v: 'collection' | 'wish') => void;
   addWish: (m: Model) => void;
@@ -71,12 +68,9 @@ const initial: Persisted = {
   wishes: [],
   aiConsent: false,
   feedback: { yes: 0, no: 0 },
-  streak: 0,
-  bestStreak: 0,
   lang: 'en',
 };
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
 const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
@@ -88,7 +82,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<Persisted>(initial);
   const [ready, setReady] = useState(false);
   const [scan, setScan] = useState<Scan>({});
-  const [streakBonus, setStreakBonus] = useState<number | null>(null);
   const [searchFor, setSearchFor] = useState<'collection' | 'wish'>('collection');
   const applied = useRef<ThemeName | null>(null);
   setCurrency(s.currency); // cheap; keeps money() in sync before children render
@@ -105,17 +98,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const saved = { ...initial, ...JSON.parse(raw) } as Persisted;
           if (!RESUMABLE.includes(saved.route)) saved.route = saved.onboarded ? 'home' : 'plan';
           if (saved.route === 'watch' && !saved.collection.some(o => o.modelId === saved.detailId)) saved.route = 'home';
-          // daily streak: opening Crown on consecutive days
-          const today = dayKey(new Date()), y = new Date(); y.setDate(y.getDate() - 1);
-          if (saved.lastOpen !== today) {
-            saved.streak = saved.lastOpen === dayKey(y) ? saved.streak + 1 : 1;
-            saved.bestStreak = Math.max(saved.bestStreak, saved.streak);
-            saved.lastOpen = today;
-            if (saved.streak > 1 && saved.onboarded) setStreakBonus(saved.streak);
-          }
           setS(saved);
-        } else {
-          setS(p => ({ ...p, lastOpen: dayKey(new Date()), streak: 1, bestStreak: 1 }));
         }
       })
       .catch(() => {})
@@ -142,9 +125,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const next: Owned = { ...prev, modelId: m.id, addedAt: prev?.addedAt ?? new Date().toISOString(), photo: photo ?? prev?.photo };
       return { ...p, collection: [...p.collection.filter(o => o.modelId !== m.id), next] };
     }),
-    streakBonus,
-    clearStreakBonus: () => setStreakBonus(null),
-    showStreak: () => setStreakBonus(s.streak),
     searchFor,
     setSearchFor,
     addWish: m => setS(p => (p.wishes.some(w => w.modelId === m.id) ? p : { ...p, wishes: [...p.wishes, { modelId: m.id, addedAt: new Date().toISOString() }] })),
@@ -167,7 +147,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     bumpScan: () => setS(p => ({ ...p, scanCount: p.scanCount + 1 })),
     reset: () => {
       setScan({});
-      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lang: p.lang, lastOpen: p.lastOpen, streak: p.streak, bestStreak: p.bestStreak }));
+      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lang: p.lang }));
     },
     setTheme: theme => setS(p => ({ ...p, theme })),
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),

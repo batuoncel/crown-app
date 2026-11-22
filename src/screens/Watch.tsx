@@ -5,6 +5,7 @@ import { C, CURRENCIES, Currency, F, currency as cur, display, fromUsd, isNavy, 
 import { Button, Card, Enter, Icon, LineChart, Pill, RoundButton, Segmented, T, WatchThumb } from '../ui';
 import { pickPhoto } from '../photo';
 import { TabBar } from './Home';
+import { SellSignalCard } from './Signal';
 import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
@@ -114,6 +115,8 @@ export function WatchDetail() {
           </View>
           {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>{t("Demo data covers 12 months.")}</Text> : null}
         </Card>
+
+        <SellSignalCard m={m} factor={v.mid / m.history[12]} />
 
         <Card style={{ padding: 18, marginTop: 12 }}>
           <Text style={T.label}>{t("WHAT YOU PAID")}</Text>

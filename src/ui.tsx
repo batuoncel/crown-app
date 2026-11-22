@@ -177,7 +177,7 @@ export function Segmented<K extends string>({ options, value, onChange }: { opti
         return (
           <Pressable key={o.key} style={{ flex: 1 }} onPress={() => { Haptics.selectionAsync(); onChange(o.key); }} accessibilityRole="radio" accessibilityState={{ selected: on }}>
             <View style={{ height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? C.surface : 'transparent', borderWidth: on ? 1 : 0, borderColor: C.line }}>
-              <Text style={{ fontFamily: on ? F.bold : F.semibold, fontSize: 13.5, color: on ? C.ink : C.stone }}>{o.label}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: on ? F.bold : F.semibold, fontSize: options.length > 3 ? 12.5 : 13.5, color: on ? C.ink : C.stone, paddingHorizontal: 4 }}>{o.label}</Text>
             </View>
           </Pressable>
         );

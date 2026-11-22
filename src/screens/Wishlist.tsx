@@ -6,6 +6,7 @@ import { Button, Card, Enter, Icon, Pill, RoundButton, T, WatchThumb } from '../
 import { byId, change12 } from '../data';
 import { Wish, useStore } from '../store';
 import { wishPrice } from './Home';
+import { BuySignalLine } from './Signal';
 import { t } from '../i18n';
 
 function WishCard({ w }: { w: Wish }) {
@@ -44,6 +45,7 @@ function WishCard({ w }: { w: Wish }) {
         </View>
         <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: ch >= 0 ? C.up : C.down, marginBottom: 6 }}>{pct(ch)}{t(" · 12M")}</Text>
       </View>
+      <BuySignalLine m={m} />
       <Text style={[T.label, { marginTop: 14 }]}>{t("ALERT ME AT")}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12 }}>

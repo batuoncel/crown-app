@@ -142,7 +142,6 @@ export function Promise_() {
       <View style={{ paddingHorizontal: 24, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <ThemeToggle />
           {!last ? <Pressable onPress={() => go('goal')} hitSlop={10} accessibilityRole="button"><Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>{t("Skip")}</Text></Pressable> : null}
         </View>
       </View>
