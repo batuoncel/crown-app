@@ -4,7 +4,7 @@ import { MODELS, Model } from './data';
 import { API_BASE } from './market';
 
 // Turned on once GEMINI_API_KEY is stored on the proxy and tested. Until then scans use the demo matcher.
-export const LIVE_SCAN = false;
+export const LIVE_SCAN = true;
 
 export type Identified = {
   isWatch: boolean;

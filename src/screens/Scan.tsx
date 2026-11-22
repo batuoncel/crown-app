@@ -150,8 +150,8 @@ export function Camera() {
 // Shown once, before the first scan: what happens to the photo.
 function ConsentSheet({ onAgree, onLater }: { onAgree: () => void; onLater: () => void }) {
   const rows = [
-    { i: 'scan', t: t('To identify your watch, Crown reads the photo you take. In this prototype it is matched on your phone against demo data.') },
-    { i: 'info', t: t('When live recognition launches, the photo is sent to Google Gemini, a third-party AI service, to identify the model.') },
+    { i: 'scan', t: 'To identify your watch, Crown sends the photo you take to Google Gemini, a third-party AI service. It is used only to name the model.' },
+    { i: 'info', t: 'On the free version of this service, Google may use photos to improve its products. Avoid photos that show people or personal details.' },
     { i: 'trash', t: t('Your photos stay in your collection on this phone. Remove a watch or reset Crown to delete them.') },
   ];
   return (
