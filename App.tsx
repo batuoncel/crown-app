@@ -7,6 +7,7 @@ import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700
 import { C, F } from './src/theme';
 import { MODELS } from './src/data';
 import { WatchArt } from './src/ui';
+import { BrandSplash } from './src/BrandSplash';
 import { Route, StoreProvider, useStore } from './src/store';
 import { About, Goal, Plan, PlanLoading, Promise_ } from './src/screens/Onboarding';
 import { Analysing, Camera, Partial, Priming, Result, Search } from './src/screens/Scan';
@@ -117,19 +118,24 @@ export default function App() {
   const [loaded, fontError] = useFonts({ InstrumentSerif_400Regular, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold });
   // Don't block on fonts: in-app browsers can stall or fail the first font load. Fall back after a short wait.
   const [timedOut, setTimedOut] = useState(false);
+  const [splashDone, setSplashDone] = useState(GALLERY);
   useEffect(() => {
     const t = setTimeout(() => setTimedOut(true), 2500);
     return () => clearTimeout(t);
   }, []);
+  const fontsReady = loaded || !!fontError || timedOut;
   return (
     <SafeAreaProvider>
-      {GALLERY && (loaded || timedOut) ? <Gallery /> : loaded || fontError || timedOut ? (
-        <StoreProvider>
-          <Router />
-        </StoreProvider>
-      ) : (
-        <Splash />
-      )}
+      <View style={{ flex: 1, backgroundColor: '#070b11' }}>
+        {GALLERY && fontsReady ? <Gallery /> : fontsReady ? (
+          <StoreProvider>
+            <Router />
+          </StoreProvider>
+        ) : (
+          <Splash />
+        )}
+        {splashDone ? null : <BrandSplash ready={fontsReady} onDone={() => setSplashDone(true)} />}
+      </View>
     </SafeAreaProvider>
   );
 }

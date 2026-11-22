@@ -77,7 +77,7 @@ const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
 
 // routes that are safe to resume after the app is closed
-const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming', 'paywall', 'home', 'alerts', 'settings', 'watch', 'awards', 'guide', 'wishlist', 'report'];
+const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming'];
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<Persisted>(initial);
@@ -97,8 +97,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .then(raw => {
         if (raw) {
           const saved = { ...initial, ...JSON.parse(raw) } as Persisted;
-          if (!RESUMABLE.includes(saved.route)) saved.route = saved.onboarded ? 'home' : 'plan';
-          if (saved.route === 'watch' && !saved.collection.some(o => o.modelId === saved.detailId)) saved.route = 'home';
+          // every launch starts on Home; only an unfinished onboarding resumes where it stopped
+          saved.route = saved.onboarded ? 'home' : RESUMABLE.includes(saved.route) ? saved.route : 'promise';
           setS(saved);
         }
       })
