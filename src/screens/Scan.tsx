@@ -297,31 +297,7 @@ export function Result() {
             ) : null}
           </Card>
         </Enter>
-        <Enter delay={450} style={{ paddingHorizontal: 24, marginTop: 12 }}>
-          <Card style={{ padding: 16 }}>
-            {vote === null ? (
-              <>
-                <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Is this the right watch?</Text>
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-                  {(['yes', 'no'] as const).map(v => (
-                    <Pressable key={v} style={{ flex: 1 }} onPress={() => { Haptics.selectionAsync(); setVote(v); giveFeedback(v === 'yes'); }} accessibilityRole="button">
-                      <View style={{ height: 42, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        <View style={{ transform: [{ rotate: v === 'no' ? '180deg' : '0deg' }] }}><Icon name="thumb" size={17} color={C.ink} /></View>
-                        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>{v === 'yes' ? 'Yes' : 'No'}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            ) : vote === 'yes' ? (
-              <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Thanks. That helps us match better.</Text>
-            ) : (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={[T.body, { fontFamily: F.semibold, textAlign: 'center' }]}>Sorry about that. Find the right model?</Text>
-                <Pressable onPress={() => go('search')} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.green, marginTop: 8 }}>Search by name or reference</Text></Pressable>
-              </View>
-            )}
-          </Card>
+        <Enter delay={450} style={{ paddingHorizontal: 24, marginTop: 4 }}>
           {onboarded ? (
             <Pressable onPress={() => { Haptics.selectionAsync(); addWish(m); go('wishlist'); }} hitSlop={8} style={{ alignSelf: 'center', marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="heart" size={15} color={C.down} />
@@ -330,9 +306,37 @@ export function Result() {
           ) : null}
         </Enter>
       </ScrollView>
-      <BottomCTA secondary={<Button title="Not my watch" kind="ghost" onPress={() => go('search')} />}>
+      <BottomCTA secondary={<MatchFeedback vote={vote} onVote={v => { Haptics.selectionAsync(); setVote(v); giveFeedback(v === 'yes'); }} onScan={() => go('priming')} onSearch={() => go('search')} />}>
         <Button title="Add to my collection" onPress={add} />
       </BottomCTA>
+    </View>
+  );
+}
+
+// Sits in the fixed slot under the main button, so it is always visible without scrolling.
+function MatchFeedback({ vote, onVote, onScan, onSearch }: { vote: 'yes' | 'no' | null; onVote: (v: 'yes' | 'no') => void; onScan: () => void; onSearch: () => void }) {
+  const chip = (label: string, icon: string, onPress: () => void, flip?: boolean, strong?: boolean) => (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6}>
+      <View style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1, borderColor: strong ? C.green : C.line, backgroundColor: strong ? C.greenSoft : C.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ transform: [{ rotate: flip ? '180deg' : '0deg' }] }}><Icon name={icon} size={15} color={strong ? C.green : C.ink} /></View>
+        <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: strong ? C.green : C.ink }}>{label}</Text>
+      </View>
+    </Pressable>
+  );
+  if (vote === 'yes') return <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone, textAlign: 'center' }}>Thanks. That helps us match better.</Text>;
+  if (vote === 'no') {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {chip('Scan again', 'refresh', onScan, false, true)}
+        {chip('Search by name', 'search', onSearch, false, true)}
+      </View>
+    );
+  }
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+      <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink }}>Right watch?</Text>
+      {chip('Yes', 'thumb', () => onVote('yes'))}
+      {chip('No', 'thumb', () => onVote('no'), true)}
     </View>
   );
 }
