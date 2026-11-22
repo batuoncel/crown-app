@@ -15,8 +15,6 @@ const fmtDate = (d: Date) => fmtLocalDate(d, { month: 'short', day: 'numeric' })
 export function Paywall() {
   const { go, answers, setPro } = useStore();
   const [plan, setPlan] = useState<'year' | 'week'>('year');
-  const now = new Date();
-  const remind = new Date(now.getTime() + 5 * 864e5), charge = new Date(now.getTime() + 7 * 864e5);
   const headline = answers.goal === 'sell' ? t('Know the right moment to sell.') : answers.goal === 'buy' ? t('Never overpay for a watch again.') : t("See your collection's value, every week.");
   const perks = [
     t('Unlimited watches in your collection'),
@@ -60,27 +58,11 @@ export function Paywall() {
             </View>
           ))}
         </View>
-        {plan === 'year' ? (
-          <View style={{ flexDirection: 'row', marginTop: 22 }}>
-            <View style={{ position: 'absolute', left: 12, right: 12, top: 11, height: 2, backgroundColor: C.line }} />
-            {[
-              { d: t('Today'), t: t('Full access'), c: C.green, i: 'lock', a: 'flex-start' },
-              { d: fmtDate(remind), t: t('Reminder sent'), c: C.brass, i: 'bell', a: 'center' },
-              { d: fmtDate(charge), t: t('Trial ends, $39.99'), c: C.stone, i: 'cal', a: 'flex-end' },
-            ].map(x => (
-              <View key={x.d} style={{ flex: 1, alignItems: x.a as 'center' }}>
-                <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: x.c, alignItems: 'center', justifyContent: 'center' }}><Icon name={x.i} size={13} color={C.onPrimary} /></View>
-                <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink, marginTop: 6 }}>{x.d}</Text>
-                <Text style={[T.small, { fontSize: 11.5 }]}>{x.t}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        <Plan id="year" title={t("Yearly")} sub="7-day free trial, then $39.99/year" price="$0.77" unit="per week" best />
-        <Plan id="week" title={t("Weekly")} sub="No trial, billed weekly" price="$4.99" unit="per week" />
+        <Plan id="year" title={t("Yearly")} sub={t("$39.99 billed once a year")} price="$0.77" unit={t("per week")} best />
+        <Plan id="week" title={t("Weekly")} sub={t("Billed every week")} price="$4.99" unit={t("per week")} />
       </ScrollView>
-      <BottomCTA note={`${plan === 'year' ? t('No charge today. Cancel anytime before {date}.', { date: fmtDate(charge) }) : t('Cancel anytime in Settings.')}\n${t('Demo prototype, no real payment.')}`}>
-        <Button title={plan === 'year' ? t('Start my 7-day free trial') : t('Subscribe for $4.99/week')} onPress={() => { setPro(true); go('proWelcome'); }} />
+      <BottomCTA note={`${t('Cancel anytime in Settings.')}\n${t('Demo prototype, no real payment.')}`}>
+        <Button title={plan === 'year' ? t('Subscribe for $39.99/year') : t('Subscribe for $4.99/week')} onPress={() => { setPro(true); go('proWelcome'); }} />
       </BottomCTA>
     </View>
   );
