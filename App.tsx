@@ -25,7 +25,7 @@ const SCREENS: Record<Route, React.ComponentType> = {
 const DARK: Route[] = ['camera', 'analysing', 'proWelcome'];
 
 function Router() {
-  const { route, ready, theme, currency } = useStore();
+  const { route, ready, theme, currency, lang } = useStore();
   const insets = useSafeAreaInsets();
   const a = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -40,7 +40,7 @@ function Router() {
     <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <StatusBar style={dark || theme === 'navy' ? 'light' : 'dark'} />
       <Animated.View style={{ flex: 1, opacity: a, transform: [{ translateX: a.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }}>
-        <Screen key={route + theme + currency} />
+        <Screen key={route + theme + currency + lang} />
       </Animated.View>
     </View>
   );

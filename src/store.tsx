@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Answers, Condition, Model } from './data';
 import { Currency, setCurrency, ThemeName } from './theme';
+import { Lang, setLang } from './i18n';
 import { applyTheme } from './ui';
 
 export type Route =
@@ -15,7 +16,7 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; seenAwards: string[]; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lastOpen?: string; streak: number; bestStreak: number };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lastOpen?: string; streak: number; bestStreak: number; lang: Lang };
 
 export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
 
@@ -49,6 +50,7 @@ type Store = Persisted & {
   reset: () => void;
   setTheme: (t: ThemeName) => void;
   setCurrencyPref: (c: Currency) => void;
+  setLanguage: (l: Lang) => void;
   openWatch: (modelId: string, route?: Route) => void;
   updateWatch: (modelId: string, patch: Partial<Owned>) => void;
 };
@@ -71,6 +73,7 @@ const initial: Persisted = {
   feedback: { yes: 0, no: 0 },
   streak: 0,
   bestStreak: 0,
+  lang: 'en',
 };
 
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -89,6 +92,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [searchFor, setSearchFor] = useState<'collection' | 'wish'>('collection');
   const applied = useRef<ThemeName | null>(null);
   setCurrency(s.currency); // cheap; keeps money() in sync before children render
+  setLang(s.lang);
   if (applied.current !== s.theme) {
     applyTheme(s.theme); // before children render, so they read the right palette
     applied.current = s.theme;
@@ -163,10 +167,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     bumpScan: () => setS(p => ({ ...p, scanCount: p.scanCount + 1 })),
     reset: () => {
       setScan({});
-      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lastOpen: p.lastOpen, streak: p.streak, bestStreak: p.bestStreak }));
+      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lang: p.lang, lastOpen: p.lastOpen, streak: p.streak, bestStreak: p.bestStreak }));
     },
     setTheme: theme => setS(p => ({ ...p, theme })),
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),
+    setLanguage: lang => setS(p => ({ ...p, lang })),
     openWatch: (detailId, route = 'watch') => setS(p => ({ ...p, detailId, route })),
     updateWatch: (id, patch) => setS(p => ({ ...p, collection: p.collection.map(o => (o.modelId === id ? { ...o, ...patch } : o)) })),
   };

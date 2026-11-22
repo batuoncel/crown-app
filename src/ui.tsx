@@ -4,6 +4,7 @@ import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, RadialGradie
 import * as Haptics from 'expo-haptics';
 import { C, F, display, money, setPalette, ThemeName, isNavy } from './theme';
 import type { WatchKind } from './data';
+import { t } from './i18n';
 
 // ---------- icons (Phosphor-style strokes) ----------
 const P: Record<string, string> = {
@@ -109,7 +110,7 @@ export function RoundButton({ icon, onPress, dark, label }: { icon: string; onPr
 // ---------- onboarding progress ----------
 export function Progress({ step, total = 6 }: { step: number; total?: number }) {
   return (
-    <View style={{ flex: 1, flexDirection: 'row', gap: 6 }} accessibilityLabel={`Step ${step} of ${total}`}>
+    <View style={{ flex: 1, flexDirection: 'row', gap: 6 }} accessibilityLabel={t('Step {a} of {b}', { a: step, b: total })}>
       {Array.from({ length: total }, (_, i) => (
         <Seg key={i} on={i < step} />
       ))}
@@ -144,12 +145,12 @@ export function Pill({ text, bg, fg, icon }: { text: string; bg: string; fg: str
 // The user's own photo of the watch. There are tens of thousands of references, so there is no
 // stock drawing per model: without a photo we show a brand monogram instead.
 export function WatchThumb({ photo, brand, size, radius = size * 0.25, style }: { photo?: string; brand: string; size: number; radius?: number; style?: ViewStyle }) {
-  if (photo) return <Image source={{ uri: photo }} style={[{ width: size, height: size, borderRadius: radius, backgroundColor: C.line }, style as object]} accessibilityLabel={`Your photo of the ${brand}`} />;
+  if (photo) return <Image source={{ uri: photo }} style={[{ width: size, height: size, borderRadius: radius, backgroundColor: C.line }, style as object]} accessibilityLabel={t('Your photo of the {brand}', { brand })} />;
   const initials = brand.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   return (
     <View style={[{ width: size, height: size, borderRadius: radius, backgroundColor: C.halo, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line }, style]}>
       <Text style={{ fontFamily: F.serif, fontSize: size * (initials.length > 1 ? 0.34 : 0.44), color: C.brassInk, letterSpacing: 1 }}>{initials}</Text>
-      {size >= 90 ? <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: C.stone, marginTop: 4 }}>No photo yet</Text> : null}
+      {size >= 90 ? <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: C.stone, marginTop: 4 }}>{t("No photo yet")}</Text> : null}
     </View>
   );
 }
@@ -446,11 +447,11 @@ export function CountUp({ to, style, duration = 900 }: { to: number; style: Text
 
 export function Logo({ color = C.ink, onLongPress }: { color?: string; onLongPress?: () => void }) {
   return (
-    <Pressable onLongPress={onLongPress} delayLongPress={900} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessibilityLabel="Crown">
+    <Pressable onLongPress={onLongPress} delayLongPress={900} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessibilityLabel={t("Crown")}>
       {isNavy()
         ? <Image source={require('../assets/crown-mark.png')} style={{ width: 32, height: 32, borderRadius: 9 }} />
         : <Image source={require('../assets/crown-mark-light.png')} style={{ width: 36, height: 36, marginHorizontal: -2 }} />}
-      <Text style={{ fontFamily: F.serif, fontSize: isNavy() ? 20 : 24, letterSpacing: 3, color }}>CROWN</Text>
+      <Text style={{ fontFamily: F.serif, fontSize: isNavy() ? 20 : 24, letterSpacing: 3, color }}>{t("CROWN")}</Text>
     </Pressable>
   );
 }

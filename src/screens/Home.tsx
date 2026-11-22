@@ -7,8 +7,9 @@ import { AWARDS, unlocked } from '../awards';
 import { GuideCarousel } from './Guide';
 import { byId, change12, conditionFactor, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
+import { fmtDate as fmtLocalDate, t } from '../i18n';
 
-const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const fmtDate = (d: Date) => fmtLocalDate(d, { month: 'short', day: 'numeric' });
 
 // ---------- 8. Paywall ----------
 export function Paywall() {
@@ -16,12 +17,12 @@ export function Paywall() {
   const [plan, setPlan] = useState<'year' | 'week'>('year');
   const now = new Date();
   const remind = new Date(now.getTime() + 5 * 864e5), charge = new Date(now.getTime() + 7 * 864e5);
-  const headline = answers.goal === 'sell' ? 'Know the right moment to sell.' : answers.goal === 'buy' ? 'Never overpay for a watch again.' : "See your collection's value, every week.";
+  const headline = answers.goal === 'sell' ? t('Know the right moment to sell.') : answers.goal === 'buy' ? t('Never overpay for a watch again.') : t("See your collection's value, every week.");
   const perks = [
-    'Unlimited watches in your collection',
-    answers.goal === 'sell' ? 'Sell alerts when a watch is up 5%' : 'Alerts when a watch moves ±5%',
-    'Full 5-year price history',
-    'Insurance-ready value report (PDF)',
+    t('Unlimited watches in your collection'),
+    answers.goal === 'sell' ? t('Sell alerts when a watch is up 5%') : t('Alerts when a watch moves ±5%'),
+    t('Full 5-year price history'),
+    t('Insurance-ready value report (PDF)'),
   ];
   const Plan = ({ id, title, sub, price, unit, best }: { id: 'year' | 'week'; title: string; sub: string; price: string; unit: string; best?: boolean }) => {
     const s = plan === id;
@@ -37,7 +38,7 @@ export function Paywall() {
             <Text style={T.b}>{price}</Text>
             <Text style={[T.small, { fontSize: 12 }]}>{unit}</Text>
           </View>
-          {best ? <View style={{ position: 'absolute', top: -13, right: 14, backgroundColor: C.brass, borderRadius: 12, height: 24, paddingHorizontal: 10, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 11.5, color: C.ink }}>Best value</Text></View> : null}
+          {best ? <View style={{ position: 'absolute', top: -13, right: 14, backgroundColor: C.brass, borderRadius: 12, height: 24, paddingHorizontal: 10, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 11.5, color: C.ink }}>{t("Best value")}</Text></View> : null}
         </Card>
       </Pressable>
     );
@@ -45,11 +46,11 @@ export function Paywall() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
-        <RoundButton icon="close" onPress={() => go('home')} label="Close, continue free" />
-        <Text style={[T.small, { fontFamily: F.semibold }]}>Free plan: 1 watch</Text>
+        <RoundButton icon="close" onPress={() => go('home')} label={t("Close, continue free")} />
+        <Text style={[T.small, { fontFamily: F.semibold }]}>{t("Free plan: 1 watch")}</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
-        <Text style={[T.eyebrow, { color: C.brassInk }]}>Crown Pro</Text>
+        <Text style={[T.eyebrow, { color: C.brassInk }]}>{t("Crown Pro")}</Text>
         <Text style={[T.h2, { marginTop: 8 }]}>{headline}</Text>
         <View style={{ gap: 11, marginTop: 18 }}>
           {perks.map(p => (
@@ -63,9 +64,9 @@ export function Paywall() {
           <View style={{ flexDirection: 'row', marginTop: 22 }}>
             <View style={{ position: 'absolute', left: 12, right: 12, top: 11, height: 2, backgroundColor: C.line }} />
             {[
-              { d: 'Today', t: 'Full access', c: C.green, i: 'lock', a: 'flex-start' },
-              { d: fmtDate(remind), t: 'Reminder sent', c: C.brass, i: 'bell', a: 'center' },
-              { d: fmtDate(charge), t: 'Trial ends, $39.99', c: C.stone, i: 'cal', a: 'flex-end' },
+              { d: t('Today'), t: t('Full access'), c: C.green, i: 'lock', a: 'flex-start' },
+              { d: fmtDate(remind), t: t('Reminder sent'), c: C.brass, i: 'bell', a: 'center' },
+              { d: fmtDate(charge), t: t('Trial ends, $39.99'), c: C.stone, i: 'cal', a: 'flex-end' },
             ].map(x => (
               <View key={x.d} style={{ flex: 1, alignItems: x.a as 'center' }}>
                 <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: x.c, alignItems: 'center', justifyContent: 'center' }}><Icon name={x.i} size={13} color={C.onPrimary} /></View>
@@ -75,11 +76,11 @@ export function Paywall() {
             ))}
           </View>
         ) : null}
-        <Plan id="year" title="Yearly" sub="7-day free trial, then $39.99/year" price="$0.77" unit="per week" best />
-        <Plan id="week" title="Weekly" sub="No trial, billed weekly" price="$4.99" unit="per week" />
+        <Plan id="year" title={t("Yearly")} sub="7-day free trial, then $39.99/year" price="$0.77" unit="per week" best />
+        <Plan id="week" title={t("Weekly")} sub="No trial, billed weekly" price="$4.99" unit="per week" />
       </ScrollView>
-      <BottomCTA note={`${plan === 'year' ? `No charge today. Cancel anytime before ${fmtDate(charge)}.` : 'Cancel anytime in Settings.'}\nDemo prototype, no real payment.`}>
-        <Button title={plan === 'year' ? 'Start my 7-day free trial' : 'Subscribe for $4.99/week'} onPress={() => { setPro(true); go('proWelcome'); }} />
+      <BottomCTA note={`${plan === 'year' ? t('No charge today. Cancel anytime before {date}.', { date: fmtDate(charge) }) : t('Cancel anytime in Settings.')}\n${t('Demo prototype, no real payment.')}`}>
+        <Button title={plan === 'year' ? t('Start my 7-day free trial') : t('Subscribe for $4.99/week')} onPress={() => { setPro(true); go('proWelcome'); }} />
       </BottomCTA>
     </View>
   );
@@ -92,13 +93,13 @@ export function ProWelcome() {
       <View />
       <Enter style={{ alignItems: 'center' }}>
         <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(243,239,230,.12)', alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={44} color={C.brass} w={2.4} /></View>
-        <Text style={[T.h1, { color: C.onPrimary, textAlign: 'center', marginTop: 28 }]}>Welcome to Pro.</Text>
-        <Text style={[T.sub, { color: C.onPrimarySoft, textAlign: 'center' }]}>Your alerts are on and your full price history is unlocked.</Text>
+        <Text style={[T.h1, { color: C.onPrimary, textAlign: 'center', marginTop: 28 }]}>{t("Welcome to Pro.")}</Text>
+        <Text style={[T.sub, { color: C.onPrimarySoft, textAlign: 'center' }]}>{t("Your alerts are on and your full price history is unlocked.")}</Text>
         <View style={{ marginTop: 18, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(243,239,230,.12)' }}>
-          <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.onPrimarySoft }}>Demo: no payment was taken</Text>
+          <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.onPrimarySoft }}>{t("Demo: no payment was taken")}</Text>
         </View>
       </Enter>
-      <Button title="Go to my collection" kind="light" onPress={() => go('home')} />
+      <Button title={t("Go to my collection")} kind="light" onPress={() => go('home')} />
     </View>
   );
 }
@@ -110,19 +111,19 @@ export function TabBar({ active }: { active: Tab }) {
   const TabItem = ({ id, icon, label }: { id: Tab; icon: string; label: string }) => (
     <Pressable onPress={() => { Haptics.selectionAsync(); go(id); }} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="tab" accessibilityState={{ selected: active === id }}>
       <Icon name={icon} size={23} color={active === id ? C.green : C.stone} />
-      <Text style={{ fontFamily: F.semibold, fontSize: 11, color: active === id ? C.green : C.stone }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.semibold, fontSize: 10.5, color: active === id ? C.green : C.stone, maxWidth: '100%', paddingHorizontal: 2 }}>{label}</Text>
     </Pressable>
   );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingTop: 10, paddingBottom: 6, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.paper }}>
-      <TabItem id="home" icon="watch" label="Collection" />
-      <TabItem id="awards" icon="medal" label="Awards" />
-      <Pressable onPress={() => go('priming')} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="button" accessibilityLabel="Scan a watch">
+      <TabItem id="home" icon="watch" label={t("Collection")} />
+      <TabItem id="awards" icon="medal" label={t("Awards")} />
+      <Pressable onPress={() => go('priming')} style={{ alignItems: 'center', gap: 4, flex: 1 }} accessibilityRole="button" accessibilityLabel={t("Scan a watch")}>
         <View style={{ width: 54, height: 54, marginTop: -24, borderRadius: 27, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center', shadowColor: C.green, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } }}><Icon name="scan" size={24} color={C.onPrimary} /></View>
-        <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.stone }}>Scan</Text>
+        <Text style={{ fontFamily: F.semibold, fontSize: 11, color: C.stone }}>{t("Scan")}</Text>
       </Pressable>
-      <TabItem id="alerts" icon="bell" label="Alerts" />
-      <TabItem id="settings" icon="sliders" label="Settings" />
+      <TabItem id="alerts" icon="bell" label={t("Alerts")} />
+      <TabItem id="settings" icon="sliders" label={t("Settings")} />
     </View>
   );
 }
@@ -168,22 +169,22 @@ export function Home() {
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         {streak > 1 ? (
-          <Pressable onPress={() => { Haptics.selectionAsync(); showStreak(); }} accessibilityRole="button" accessibilityLabel={`${streak}-day streak`}>
+          <Pressable onPress={() => { Haptics.selectionAsync(); showStreak(); }} accessibilityRole="button" accessibilityLabel={t('{n}-day streak', { n: streak })}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: C.downSoft }}>
               <Icon name="flame" size={14} color={C.down} w={2} />
               <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.down }}>{streak}</Text>
             </View>
           </Pressable>
         ) : null}
-        {pro ? <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text="Try Pro" bg={C.greenSoft} fg={C.green} /></Pressable>}
+        {pro ? <Pill text={t("Pro")} bg={C.brassSoft} fg={C.brassInk} /> : <Pressable onPress={() => go('paywall')}><Pill text={t("Try Pro")} bg={C.greenSoft} fg={C.green} /></Pressable>}
         </View>
       </View>
       {models.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
           <View style={{ opacity: 0.35 }}><WatchArt size={110} strap={false} /></View>
-          <Text style={[T.h2, { textAlign: 'center', marginTop: 20 }]}>Your collection is empty.</Text>
-          <Text style={[T.sub, { textAlign: 'center' }]}>Scan your first watch to see what it is worth today.</Text>
-          <Button title="Scan a watch" icon="scan" onPress={() => go('priming')} style={{ marginTop: 24, paddingHorizontal: 28 }} />
+          <Text style={[T.h2, { textAlign: 'center', marginTop: 20 }]}>{t("Your collection is empty.")}</Text>
+          <Text style={[T.sub, { textAlign: 'center' }]}>{t("Scan your first watch to see what it is worth today.")}</Text>
+          <Button title={t("Scan a watch")} icon="scan" onPress={() => go('priming')} style={{ marginTop: 24, paddingHorizontal: 28 }} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 18, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
@@ -193,18 +194,18 @@ export function Home() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingRight: 14, borderRadius: 16, backgroundColor: C.brassSoft }}>
                   <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.brass, alignItems: 'center', justifyContent: 'center' }}><Icon name={freshAward.icon} size={19} color="#FFFFFF" w={2} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 11.5, letterSpacing: 1, color: C.brassInk }}>{fresh.length > 1 ? `${fresh.length} NEW AWARDS` : 'NEW AWARD'}</Text>
-                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.ink }}>{freshAward.name}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: 11.5, letterSpacing: 1, color: C.brassInk }}>{fresh.length > 1 ? t('{n} NEW AWARDS', { n: fresh.length }) : t('NEW AWARD')}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.ink }}>{t(freshAward.name)}</Text>
                   </View>
                   <Icon name="chevron" size={16} color={C.brassInk} />
                 </View>
               </Enter>
             </Pressable>
           ) : null}
-          <Text style={T.label}>YOUR COLLECTION</Text>
+          <Text style={T.label}>{t("YOUR COLLECTION")}</Text>
           <CountUp to={total} style={{ fontFamily: F.serif, ...display(52), lineHeight: 58, color: C.ink }} />
           <Text style={{ fontFamily: F.bold, fontSize: 14, color: delta >= 0 ? C.up : C.down }}>
-            {delta >= 0 ? '▲ ' : '▼ '}{money(Math.abs(delta))} ({Math.abs(dpct).toFixed(1)}%) <Text style={{ fontFamily: F.medium, color: C.stone }}>past {range === '1M' ? 'month' : range === '6M' ? '6 months' : range === '5Y' ? '12 months (demo data covers 1 year)' : '12 months'}</Text>
+            {delta >= 0 ? '▲ ' : '▼ '}{money(Math.abs(delta))} ({Math.abs(dpct).toFixed(1)}%) <Text style={{ fontFamily: F.medium, color: C.stone }}>{range === '1M' ? t('past month') : range === '6M' ? t('past 6 months') : range === '5Y' ? t('past 12 months (demo data covers 1 year)') : t('past 12 months')}</Text>
           </Text>
           <View style={{ marginTop: 18, marginBottom: 8 }}>
             <LineChart data={shown} width={width - 48} height={110} color={C.green} />
@@ -226,12 +227,12 @@ export function Home() {
           {paidOnes.length ? (
             <Card style={{ marginTop: 16, padding: 14, flexDirection: 'row' }}>
               <View style={{ flex: 1 }}>
-                <Text style={T.label}>YOU PAID</Text>
+                <Text style={T.label}>{t("YOU PAID")}</Text>
                 <Text style={{ fontFamily: F.serif, ...display(22), color: C.ink }}>{money(paidTotal)}</Text>
               </View>
               <View style={{ width: 1, backgroundColor: C.line, marginHorizontal: 14 }} />
               <View style={{ flex: 1 }}>
-                <Text style={T.label}>{gain >= 0 ? 'GAIN' : 'LOSS'}{paidOnes.length < collection.length ? ` · ${paidOnes.length} OF ${collection.length}` : ''}</Text>
+                <Text style={T.label}>{gain >= 0 ? t('GAIN') : t('LOSS')}{paidOnes.length < collection.length ? ' · ' + t('{a} OF {b}', { a: paidOnes.length, b: collection.length }) : ''}</Text>
                 <Text style={{ fontFamily: F.serif, ...display(22), color: gain >= 0 ? C.up : C.down }}>{gain >= 0 ? '+' : '−'}{money(Math.abs(gain))} <Text style={{ fontFamily: F.bold, fontSize: 13 }}>{paidTotal ? `${gain >= 0 ? '+' : '−'}${Math.abs((gain / paidTotal) * 100).toFixed(1)}%` : ''}</Text></Text>
               </View>
             </Card>
@@ -239,18 +240,18 @@ export function Home() {
             <Pressable onPress={() => openWatch(collection[0].modelId)}>
               <View style={{ marginTop: 16, padding: 14, borderRadius: 16, backgroundColor: C.brassSoft, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Icon name="edit" size={18} color={C.brassInk} />
-                <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 13.5, color: C.brassInk }}>Add what you paid to see your gain or loss</Text>
+                <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 13.5, color: C.brassInk }}>{t("Add what you paid to see your gain or loss")}</Text>
                 <Icon name="chevron" size={16} color={C.brassInk} />
               </View>
             </Pressable>
           )}
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 24 }}>
-            <Text style={[T.b, { fontSize: 17 }]}>Watches</Text>
+            <Text style={[T.b, { fontSize: 17 }]}>{t("Watches")}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 14 }}>
-              <Text style={T.small}>{pro ? `${models.length} of ${planSlots(answers.count)} in your plan` : `${models.length} of 1 on the free plan`}</Text>
+              <Text style={T.small}>{pro ? t('{a} of {b} in your plan', { a: models.length, b: planSlots(answers.count) }) : t('{a} of 1 on the free plan', { a: models.length })}</Text>
               <Pressable onPress={() => { Haptics.selectionAsync(); setEditing(e => !e); }} hitSlop={10} accessibilityRole="button">
-                <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.green }}>{editing ? 'Done' : 'Edit'}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.green }}>{editing ? t('Done') : t('Edit')}</Text>
               </Pressable>
             </View>
           </View>
@@ -258,18 +259,18 @@ export function Home() {
             const owned = collection[i], v = ownedValue(owned, answers.papers), ch = change12(m);
             return (
               <Enter key={m.id} delay={60 * i}>
-                <Pressable disabled={editing} onPress={() => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={`Open ${m.brand} ${m.name}`}>
+                <Pressable disabled={editing} onPress={() => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={t('Open {name}', { name: `${m.brand} ${m.name}` })}>
                 <Card style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <WatchThumb photo={owned.photo} brand={m.brand} size={56} radius={14} />
                   <View style={{ flex: 1 }}>
                     <Text style={[T.b, { fontSize: 15 }]} numberOfLines={1}>{m.brand} {m.name}</Text>
-                    <Text style={[T.small, { fontSize: 12.5 }]} numberOfLines={1}>{owned.paid ? `Paid ${money(owned.paid)}` : m.ref}</Text>
+                    <Text style={[T.small, { fontSize: 12.5 }]} numberOfLines={1}>{owned.paid ? t('Paid {amount}', { amount: money(owned.paid) }) : m.ref}</Text>
                   </View>
                   {editing ? (
-                    <Pressable onPress={() => remove(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${m.brand} ${m.name}`}
+                    <Pressable onPress={() => remove(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Remove {name}', { name: `${m.brand} ${m.name}` })}
                       style={{ height: 40, paddingHorizontal: 14, borderRadius: 12, backgroundColor: C.downSoft, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Icon name="trash" size={18} color={C.down} />
-                      <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.down }}>Remove</Text>
+                      <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.down }}>{t("Remove")}</Text>
                     </Pressable>
                   ) : (
                     <View style={{ alignItems: 'flex-end' }}>
@@ -285,20 +286,20 @@ export function Home() {
           <Pressable onPress={() => go(canAdd ? 'priming' : 'paywall')}>
             <View style={{ marginTop: 10, height: 64, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.dash, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Icon name={canAdd ? 'plus' : 'lock'} size={18} color={C.green} w={2.2} />
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.green }}>{canAdd ? 'Add a watch' : 'Add more watches with Pro'}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.green }}>{canAdd ? t('Add a watch') : t('Add more watches with Pro')}</Text>
             </View>
           </Pressable>
           <WishlistRow />
           <GuideCarousel />
-          <Text style={[T.small, { fontSize: 11.5, textAlign: 'center', marginTop: 18 }]}>Values are demo data for this prototype.</Text>
+          <Text style={[T.small, { fontSize: 11.5, textAlign: 'center', marginTop: 18 }]}>{t("Values are demo data for this prototype.")}</Text>
         </ScrollView>
       )}
       {undo ? (
         <Enter style={{ position: 'absolute', left: 16, right: 16, bottom: 96 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.ink, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16 }}>
-            <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 14, color: C.paper }} numberOfLines={1}>Removed {undo.name}</Text>
+            <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 14, color: C.paper }} numberOfLines={1}>{t('Removed {name}', { name: undo.name })}</Text>
             <Pressable onPress={() => { Haptics.selectionAsync(); restoreWatch(undo.owned, undo.index); setUndo(null); }} hitSlop={10} accessibilityRole="button">
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.brass }}>Undo</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.brass }}>{t("Undo")}</Text>
             </Pressable>
           </View>
         </Enter>
@@ -317,9 +318,9 @@ function StreakBonus({ days, onClose }: { days: number; onClose: () => void }) {
       <Enter style={{ alignSelf: 'stretch' }}>
         <View style={{ backgroundColor: C.surface, borderRadius: 28, padding: 26, alignItems: 'center' }}>
           <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: C.downSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="flame" size={40} color={C.down} w={1.8} /></View>
-          <Text style={[T.eyebrow, { color: C.down, marginTop: 18 }]}>Streak bonus</Text>
-          <Text style={{ fontFamily: F.serif, ...display(56), lineHeight: 62, color: C.ink }}>{days} days</Text>
-          <Text style={[T.sub, { textAlign: 'center', marginTop: 4 }]}>You have checked your collection {days} days in a row. Come back tomorrow to keep it going.</Text>
+          <Text style={[T.eyebrow, { color: C.down, marginTop: 18 }]}>{t("Streak bonus")}</Text>
+          <Text style={{ fontFamily: F.serif, ...display(56), lineHeight: 62, color: C.ink }}>{t('{n} days', { n: days })}</Text>
+          <Text style={[T.sub, { textAlign: 'center', marginTop: 4 }]}>{t('You have checked your collection {n} days in a row. Come back tomorrow to keep it going.', { n: days })}</Text>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 18 }}>
             {Array.from({ length: 7 }, (_, i) => (
               <View key={i} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: i < lit ? C.down : C.paper, borderWidth: 1, borderColor: i < lit ? C.down : C.line }}>
@@ -327,8 +328,8 @@ function StreakBonus({ days, onClose }: { days: number; onClose: () => void }) {
               </View>
             ))}
           </View>
-          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{days >= 7 ? 'Week Streak award unlocked' : `${7 - days} more for the Week Streak award`}</Text>
-          <View style={{ alignSelf: 'stretch', marginTop: 20 }}><Button title="Keep it going" onPress={onClose} /></View>
+          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{days >= 7 ? t('Week Streak award unlocked') : t('{n} more for the Week Streak award', { n: 7 - days })}</Text>
+          <View style={{ alignSelf: 'stretch', marginTop: 20 }}><Button title={t("Keep it going")} onPress={onClose} /></View>
         </View>
       </Enter>
     </View>
@@ -346,10 +347,10 @@ function WishlistRow() {
       <Card style={{ marginTop: 22, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.downSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="heart" size={22} color={C.down} /></View>
         <View style={{ flex: 1 }}>
-          <Text style={[T.b, { fontSize: 15.5 }]}>Wishlist</Text>
-          <Text style={T.small}>{wishes.length ? `${wishes.length} watch${wishes.length > 1 ? 'es' : ''}${atTarget ? ` · ${atTarget} at your price` : ''}` : 'Save the watch you want next. We watch the price.'}</Text>
+          <Text style={[T.b, { fontSize: 15.5 }]}>{t("Wishlist")}</Text>
+          <Text style={T.small}>{wishes.length ? (wishes.length > 1 ? t('{n} watches', { n: wishes.length }) : t('1 watch')) + (atTarget ? ' · ' + t('{n} at your price', { n: atTarget }) : '') : t('Save the watch you want next. We watch the price.')}</Text>
         </View>
-        {atTarget ? <Pill text="Price hit" bg={C.upSoft} fg={C.up} /> : <Icon name="chevron" size={16} color={C.stone} />}
+        {atTarget ? <Pill text={t("Price hit")} bg={C.upSoft} fg={C.up} /> : <Icon name="chevron" size={16} color={C.stone} />}
       </Card>
     </Pressable>
   );
@@ -365,10 +366,10 @@ export function Alerts() {
   const quiet = !due.length && !hits.length;
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Alerts</Text></View>
+      <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t("Alerts")}</Text></View>
       <ScrollView contentContainerStyle={{ padding: 24 }}>
-        <Text style={T.h2}>{!quiet ? 'Worth a look.' : models.length ? 'Quiet week.' : 'Nothing to watch yet.'}</Text>
-        <Text style={T.sub}>{!quiet ? 'A few things need your attention.' : models.length ? 'No watch has moved more than 5% since you added it. We check every Sunday.' : 'Add a watch and we will tell you when its value moves.'}</Text>
+        <Text style={T.h2}>{!quiet ? t('Worth a look.') : models.length ? t('Quiet week.') : t('Nothing to watch yet.')}</Text>
+        <Text style={T.sub}>{!quiet ? t('A few things need your attention.') : models.length ? t('No watch has moved more than 5% since you added it. We check every Sunday.') : t('Add a watch and we will tell you when its value moves.')}</Text>
         {hits.map(w => {
           const m = byId(w.modelId);
           return (
@@ -377,7 +378,7 @@ export function Alerts() {
                 <Icon name="heart" size={20} color={C.up} />
                 <View style={{ flex: 1 }}>
                   <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
-                  <Text style={T.small}>Now {money(wishPrice(m.id))}, at or under your price of {money(w.target!)}</Text>
+                  <Text style={T.small}>{t('Now {now}, at or under your price of {target}', { now: money(wishPrice(m.id)), target: money(w.target!) })}</Text>
                 </View>
                 <Icon name="chevron" size={16} color={C.stone} />
               </Card>
@@ -391,26 +392,26 @@ export function Alerts() {
               <Card style={{ marginTop: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: C.brass }}>
                 <Icon name="wrench" size={20} color={C.brassInk} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[T.b, { fontSize: 15 }]}>Service due: {m.brand} {m.name}</Text>
-                  <Text style={T.small}>Last serviced in {new Date(o.lastService!).getFullYear()}. A service keeps it accurate and protects its value.</Text>
+                  <Text style={[T.b, { fontSize: 15 }]}>{t('Service due: {name}', { name: `${m.brand} ${m.name}` })}</Text>
+                  <Text style={T.small}>{t('Last serviced in {y}. A service keeps it accurate and protects its value.', { y: new Date(o.lastService!).getFullYear() })}</Text>
                 </View>
                 <Icon name="chevron" size={16} color={C.stone} />
               </Card>
             </Pressable>
           );
         })}
-        {models.length ? <Text style={[T.label, { marginTop: 26 }]}>PRICE ALERTS</Text> : null}
+        {models.length ? <Text style={[T.label, { marginTop: 26 }]}>{t("PRICE ALERTS")}</Text> : null}
         {models.map(m => (
           <Card key={m.id} style={{ marginTop: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Icon name="bell" size={20} color={pro ? C.green : C.stone} />
             <View style={{ flex: 1 }}>
               <Text style={[T.b, { fontSize: 15 }]}>{m.brand} {m.name}</Text>
-              <Text style={T.small}>{answers.goal === 'sell' ? 'Tell me when it is up 5%' : 'Tell me if it moves ±5%'}</Text>
+              <Text style={T.small}>{answers.goal === 'sell' ? t('Tell me when it is up 5%') : t('Tell me if it moves ±5%')}</Text>
             </View>
-            <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: pro ? C.up : C.stone }}>{pro ? 'On' : 'Pro'}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: pro ? C.up : C.stone }}>{pro ? t('On') : 'Pro'}</Text>
           </Card>
         ))}
-        {!pro && models.length ? <Button title="Turn on alerts with Pro" onPress={() => go('paywall')} style={{ marginTop: 20 }} /> : null}
+        {!pro && models.length ? <Button title={t("Turn on alerts with Pro")} onPress={() => go('paywall')} style={{ marginTop: 20 }} /> : null}
       </ScrollView>
       <TabBar active="alerts" />
     </View>

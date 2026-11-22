@@ -8,6 +8,7 @@ import { TabBar } from './Home';
 import { Answers, CONDITIONS, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
+import { LANGS, Lang, fmtDate, t } from '../i18n';
 
 const SITE = 'https://batuoncel.github.io/crown-app/';
 const PAPERS: { key: NonNullable<Answers['papers']>; label: string }[] = [
@@ -16,12 +17,12 @@ const PAPERS: { key: NonNullable<Answers['papers']>; label: string }[] = [
   { key: 'No', label: 'None' },
 ];
 const round50 = (n: number) => Math.round(n / 50) * 50;
-const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const fmtDay = (iso: string) => fmtDate(new Date(iso), { month: 'short', day: 'numeric', year: 'numeric' });
 
 function Header({ title, onBack, right }: { title: string; onBack: () => void; right?: React.ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
-      <RoundButton icon="back" onPress={onBack} label="Back" />
+      <RoundButton icon="back" onPress={onBack} label={t("Back")} />
       <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{title}</Text>
       {right ?? <View style={{ width: 36 }} />}
     </View>
@@ -69,14 +70,14 @@ export function WatchDetail() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header title="Your watch" onBack={() => go('home')} right={<RoundButton icon="share" onPress={() => go('share')} label="Share value card" />} />
+      <Header title={t("Your watch")} onBack={() => go('home')} right={<RoundButton icon="share" onPress={() => go('share')} label={t("Share value card")} />} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 28 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={{ alignItems: 'center', marginTop: 8 }}>
           <Enter><WatchThumb photo={owned.photo} brand={m.brand} size={200} radius={28} /></Enter>
           <Pressable onPress={async () => { const p = await pickPhoto(); if (p) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); updateWatch(m.id, { photo: p }); } }} hitSlop={8} accessibilityRole="button"
             style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 14, paddingHorizontal: 14, height: 34, borderRadius: 17, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface }}>
             <Icon name="image" size={16} color={C.green} />
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>{owned.photo ? 'Change photo' : 'Add your photo'}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>{owned.photo ? t('Change photo') : t('Add your photo')}</Text>
           </Pressable>
         </View>
         <View style={{ alignItems: 'center' }}>
@@ -88,15 +89,15 @@ export function WatchDetail() {
         <Card style={{ padding: 18, marginTop: 18 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
-              <Text style={T.label}>WORTH TODAY</Text>
+              <Text style={T.label}>{t("WORTH TODAY")}</Text>
               <Text style={{ fontFamily: F.serif, ...display(30), lineHeight: 36, color: C.ink }}>{money(round50(v.low))}–{num(round50(v.high))}</Text>
             </View>
             <Pill text={pct(ch)} bg={ch >= 0 ? C.upSoft : C.downSoft} fg={ch >= 0 ? C.up : C.down} />
           </View>
           <View style={{ marginTop: 14 }}><LineChart data={shown} width={chartW} height={90} color={ch >= 0 ? C.up : C.down} /></View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-            <Text style={[T.small, { fontSize: 11.5 }]}>{MONTHS[13 - n]} {n === 13 ? '2025' : '2026'}</Text>
-            <Text style={[T.small, { fontSize: 11.5 }]}>Today</Text>
+            <Text style={[T.small, { fontSize: 11.5 }]}>{t(MONTHS[13 - n])} {n === 13 ? '2025' : '2026'}</Text>
+            <Text style={[T.small, { fontSize: 11.5 }]}>{t("Today")}</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
             {(['6M', '1Y', '5Y'] as const).map(t => {
@@ -111,11 +112,11 @@ export function WatchDetail() {
               );
             })}
           </View>
-          {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>Demo data covers 12 months.</Text> : null}
+          {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>{t("Demo data covers 12 months.")}</Text> : null}
         </Card>
 
         <Card style={{ padding: 18, marginTop: 12 }}>
-          <Text style={T.label}>WHAT YOU PAID</Text>
+          <Text style={T.label}>{t("WHAT YOU PAID")}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 14 }}>
               <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.stone, marginRight: 6 }}>{cur().symbol}</Text>
@@ -127,38 +128,38 @@ export function WatchDetail() {
                 returnKeyType="done"
                 placeholder={String(Math.round(fromUsd(round50(v.mid * 0.9))))}
                 placeholderTextColor={C.stone}
-                accessibilityLabel={`Purchase price in ${cur().key}`}
+                accessibilityLabel={t('Purchase price in {cur}', { cur: cur().key })}
                 style={{ flex: 1, fontFamily: F.bold, fontSize: 17, color: C.ink }}
               />
             </View>
-            {dirty ? <Button title="Save" onPress={savePaid} style={{ height: 48, paddingHorizontal: 20 }} /> : null}
+            {dirty ? <Button title={t("Save")} onPress={savePaid} style={{ height: 48, paddingHorizontal: 20 }} /> : null}
           </View>
           {owned.paid ? (
             <View style={{ marginTop: 14 }}>
               <Text style={{ fontFamily: F.serif, ...display(26), color: gain >= 0 ? C.up : C.down }}>
                 {gain >= 0 ? '+' : '−'}{money(Math.abs(gain))} <Text style={{ fontFamily: F.bold, fontSize: 15 }}>({gain >= 0 ? '+' : '−'}{Math.abs(gainPct).toFixed(1)}%)</Text>
               </Text>
-              <Text style={T.small}>{gain >= 0 ? 'Gain' : 'Loss'} since you bought it, against the middle of today's range.</Text>
+              <Text style={T.small}>{gain >= 0 ? t("Gain since you bought it, against the middle of today's range.") : t("Loss since you bought it, against the middle of today's range.")}</Text>
             </View>
           ) : (
-            <Text style={[T.small, { marginTop: 10 }]}>Add it to see your gain or loss. Only stored on this phone.</Text>
+            <Text style={[T.small, { marginTop: 10 }]}>{t("Add it to see your gain or loss. Only stored on this phone.")}</Text>
           )}
         </Card>
 
         <Card style={{ padding: 18, marginTop: 12 }}>
-          <Text style={T.label}>BOX AND PAPERS</Text>
+          <Text style={T.label}>{t("BOX AND PAPERS")}</Text>
           <View style={{ marginTop: 10 }}>
-            <Segmented options={PAPERS} value={papers} onChange={p => updateWatch(m.id, { papers: p })} />
+            <Segmented options={PAPERS.map(p => ({ ...p, label: t(p.label) }))} value={papers} onChange={p => updateWatch(m.id, { papers: p })} />
           </View>
-          <Text style={[T.small, { marginTop: 10 }]}>A full set adds about 6%. No box or papers takes off about 7%.</Text>
+          <Text style={[T.small, { marginTop: 10 }]}>{t("A full set adds about 6%. No box or papers takes off about 7%.")}</Text>
         </Card>
 
         <Card style={{ padding: 18, marginTop: 12 }}>
-          <Text style={T.label}>CONDITION</Text>
+          <Text style={T.label}>{t("CONDITION")}</Text>
           <View style={{ marginTop: 10 }}>
-            <Segmented<Condition> options={CONDITIONS.map(c => ({ key: c, label: c }))} value={owned.condition ?? 'Good'} onChange={c => updateWatch(m.id, { condition: c })} />
+            <Segmented<Condition> options={CONDITIONS.map(c => ({ key: c, label: t(c) }))} value={owned.condition ?? 'Good'} onChange={c => updateWatch(m.id, { condition: c })} />
           </View>
-          <Text style={[T.small, { marginTop: 10 }]}>{CONDITION_NOTE[owned.condition ?? 'Good']}</Text>
+          <Text style={[T.small, { marginTop: 10 }]}>{t(CONDITION_NOTE[owned.condition ?? 'Good'])}</Text>
         </Card>
 
         <ServiceCard
@@ -169,8 +170,8 @@ export function WatchDetail() {
           onGuide={() => openGuide('service')}
         />
 
-        <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>In your collection since {fmtDay(owned.addedAt)}</Text>
-        <Button title="Share value card" icon="share" onPress={() => go('share')} style={{ marginTop: 16 }} />
+        <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>{t('In your collection since {date}', { date: fmtDay(owned.addedAt) })}</Text>
+        <Button title={t("Share value card")} icon="share" onPress={() => go('share')} style={{ marginTop: 16 }} />
         <Pressable
           onPress={() => {
             if (!confirmRemove) { Haptics.selectionAsync(); setConfirmRemove(true); return; }
@@ -182,7 +183,7 @@ export function WatchDetail() {
           style={{ height: 48, marginTop: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: confirmRemove ? C.downSoft : 'transparent' }}
         >
           <Icon name="trash" size={18} color={C.down} />
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.down }}>{confirmRemove ? 'Tap again to remove' : 'Remove from collection'}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.down }}>{confirmRemove ? t('Tap again to remove') : t('Remove from collection')}</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -206,27 +207,27 @@ function ServiceCard({ last, yearText, setYearText, onSet, onGuide }: { last?: s
   return (
     <Card style={{ padding: 18, marginTop: 12, borderColor: isDue ? C.brass : C.line, borderWidth: isDue ? 2 : 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={T.label}>SERVICE</Text>
-        {last ? (isDue ? <Pill text="Due now" bg={C.brassSoft} fg={C.brassInk} icon="wrench" /> : <Pill text={`Next around ${due!.getFullYear()}`} bg={C.greenSoft} fg={C.green} />) : null}
+        <Text style={T.label}>{t("SERVICE")}</Text>
+        {last ? (isDue ? <Pill text={t("Due now")} bg={C.brassSoft} fg={C.brassInk} icon="wrench" /> : <Pill text={t('Next around {y}', { y: due!.getFullYear() })} bg={C.greenSoft} fg={C.green} />) : null}
       </View>
       <Text style={[T.body, { marginTop: 10 }]}>
-        {last ? `Last serviced ${new Date(last).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'When was it last serviced?'}
+        {last ? t('Last serviced {date}', { date: fmtDate(new Date(last), { month: 'short', year: 'numeric' }) }) : t('When was it last serviced?')}
       </Text>
-      <Text style={[T.small, { marginTop: 2 }]}>We remind you every {SERVICE_YEARS} years. A service history also helps when you sell.</Text>
+      <Text style={[T.small, { marginTop: 2 }]}>{t('We remind you every {n} years. A service history also helps when you sell.', { n: SERVICE_YEARS })}</Text>
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12 }}>
-          <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.stone, marginRight: 6 }}>Year</Text>
+          <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.stone, marginRight: 6 }}>{t("Year")}</Text>
           <TextInput value={yearText} onChangeText={t => setYearText(t.replace(/[^0-9]/g, '').slice(0, 4))} keyboardType="number-pad" placeholder={String(thisYear - 3)} placeholderTextColor={C.stone}
-            accessibilityLabel="Year of last service" style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.ink }}
+            accessibilityLabel={t("Year of last service")} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.ink }}
             onSubmitEditing={() => { if (valid) { Keyboard.dismiss(); onSet(`${y}-06-15T12:00:00Z`); setYearText(''); } }} />
         </View>
         {valid
-          ? <Button title="Save" onPress={() => { Keyboard.dismiss(); onSet(`${y}-06-15T12:00:00Z`); setYearText(''); }} style={{ height: 44, paddingHorizontal: 18 }} />
+          ? <Button title={t("Save")} onPress={() => { Keyboard.dismiss(); onSet(`${y}-06-15T12:00:00Z`); setYearText(''); }} style={{ height: 44, paddingHorizontal: 18 }} />
           : <Pressable onPress={() => onSet(new Date().toISOString())} accessibilityRole="button" style={{ height: 44, paddingHorizontal: 14, borderRadius: 12, backgroundColor: C.greenSoft, justifyContent: 'center' }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.green }}>Serviced today</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.green }}>{t("Serviced today")}</Text>
             </Pressable>}
       </View>
-      <Pressable onPress={onGuide} hitSlop={8} style={{ marginTop: 12 }}><Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>When does a watch need a service? →</Text></Pressable>
+      <Pressable onPress={onGuide} hitSlop={8} style={{ marginTop: 12 }}><Text style={{ fontFamily: F.bold, fontSize: 13, color: C.green }}>{t("When does a watch need a service? →")}</Text></Pressable>
     </Card>
   );
 }
@@ -244,7 +245,7 @@ export function Share_() {
   const w = Math.min(width - 48, 340);
   const bg = isNavy() ? '#101A2C' : C.green;
   const fg = '#F3EFE6', soft = 'rgba(243,239,230,.68)';
-  const text = `My ${m.brand} ${m.name} is worth about ${money(round50(v.mid))} today (${pct(ch)} in 12 months). Valued with Crown: ${SITE}`;
+  const text = t('My {name} is worth about {value} today ({change} in 12 months). Valued with Crown:', { name: `${m.brand} ${m.name}`, value: money(round50(v.mid)), change: pct(ch) }) + ' ' + SITE;
 
   const share = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -254,17 +255,17 @@ export function Share_() {
     } catch {
       try {
         await (globalThis as any).navigator.clipboard.writeText(text);
-        setNote('Copied. Paste it anywhere.');
+        setNote(t('Copied. Paste it anywhere.'));
         bumpShare();
       } catch {
-        setNote('Sharing is not available in this browser.');
+        setNote(t('Sharing is not available in this browser.'));
       }
     }
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <Header title="Share" onBack={() => go('watch')} />
+      <Header title={t("Share")} onBack={() => go('watch')} />
       <ScrollView contentContainerStyle={{ alignItems: 'center', padding: 24, paddingTop: 12 }} showsVerticalScrollIndicator={false}>
         <Enter>
           <View style={{ width: w, borderRadius: 28, backgroundColor: bg, padding: 22, overflow: 'hidden' }}>
@@ -272,9 +273,9 @@ export function Share_() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Image source={require('../../assets/crown-mark.png')} style={{ width: 26, height: 26, borderRadius: 7 }} />
-                <Text style={{ fontFamily: F.serif, fontSize: isNavy() ? 15 : 18, letterSpacing: 2.5, color: fg }}>CROWN</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: isNavy() ? 15 : 18, letterSpacing: 2.5, color: fg }}>{t("CROWN")}</Text>
               </View>
-              <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: soft }}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+              <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: soft }}>{fmtDate(new Date(), { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
             </View>
             <View style={{ alignItems: 'center', marginVertical: 14 }}>
               <WatchThumb photo={owned.photo} brand={m.brand} size={w * 0.62} radius={22} style={{ borderWidth: 3, borderColor: 'rgba(243,239,230,.9)' }} />
@@ -284,20 +285,20 @@ export function Share_() {
             <View style={{ height: 1, backgroundColor: 'rgba(243,239,230,.18)', marginVertical: 14 }} />
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: 1.2, color: soft }}>WORTH TODAY</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: 1.2, color: soft }}>{t("WORTH TODAY")}</Text>
                 <Text style={{ fontFamily: F.serif, ...display(40), lineHeight: 46, color: fg }}>{money(round50(v.mid))}</Text>
               </View>
               <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(243,239,230,.12)', marginBottom: 6 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: ch >= 0 ? '#9AD9AE' : '#F2A493' }}>{pct(ch)} · 12M</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: ch >= 0 ? '#9AD9AE' : '#F2A493' }}>{pct(ch)}{t(" · 12M")}</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.medium, fontSize: 12, color: soft, marginTop: 12 }}>One photo. An honest value range.</Text>
+            <Text style={{ fontFamily: F.medium, fontSize: 12, color: soft, marginTop: 12 }}>{t("One photo. An honest value range.")}</Text>
           </View>
         </Enter>
-        <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>Screenshot the card to post it as a story,{'\n'}or share it as a message with a link.</Text>
+        <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>{t("Screenshot the card to post it as a story,")}{'\n'}{t("or share it as a message with a link.")}</Text>
       </ScrollView>
       <View style={{ padding: 24, paddingTop: 8, paddingBottom: 12 }}>
-        <Button title="Share" icon="share" onPress={share} />
+        <Button title={t("Share")} icon="share" onPress={share} />
         {note ? <Text style={[T.small, { textAlign: 'center', marginTop: 8 }]}>{note}</Text> : null}
       </View>
     </View>
@@ -315,7 +316,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 // ---------- Settings ----------
 export function Settings() {
-  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback } = useStore();
+  const { go, theme, setTheme, currency, setCurrencyPref, answers, setAnswers, pro, setPro, reset, feedback, lang, setLanguage } = useStore();
   const [confirm, setConfirm] = useState(false);
   const isOther = currency !== 'USD' && currency !== 'EUR';
   const [showOther, setShowOther] = useState(isOther);
@@ -324,14 +325,28 @@ export function Settings() {
   const others = CURRENCIES.filter(c => c.key !== 'USD' && c.key !== 'EUR' && (c.name + ' ' + c.key).toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>Settings</Text></View>
+      <View style={{ paddingHorizontal: 24, height: 44, justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t("Settings")}</Text></View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
-        <Section label="APPEARANCE">
-          <Segmented<ThemeName> options={[{ key: 'classic', label: 'Classic' }, { key: 'navy', label: 'Navy' }]} value={theme} onChange={setTheme} />
+        <Section label={t("APPEARANCE")}>
+          <Segmented<ThemeName> options={[{ key: 'classic', label: t('Classic') }, { key: 'navy', label: t('Navy') }]} value={theme} onChange={setTheme} />
         </Section>
-        <Section label="CURRENCY">
+        <Section label={t('LANGUAGE')}>
+          {LANGS.map((l, i) => {
+            const on = l.key === lang;
+            return (
+              <Pressable key={l.key} onPress={() => { Haptics.selectionAsync(); setLanguage(l.key as Lang); }} accessibilityRole="radio" accessibilityState={{ selected: on }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                  <Text style={{ flex: 1, fontFamily: on ? F.bold : F.medium, fontSize: 15, color: C.ink }}>{l.native}</Text>
+                  {l.key !== 'en' ? <Text style={{ fontFamily: F.medium, fontSize: 13, color: C.stone }}>{l.name}</Text> : null}
+                  {on ? <Icon name="check" size={18} color={C.green} w={2.4} /> : <View style={{ width: 18 }} />}
+                </View>
+              </Pressable>
+            );
+          })}
+        </Section>
+        <Section label={t('CURRENCY')}>
           <Segmented<Currency>
-            options={[{ key: 'USD', label: '$ USD' }, { key: 'EUR', label: '€ EUR' }, { key: 'OTHER', label: isOther ? `${curNow.key} ▾` : 'Other ▾' }]}
+            options={[{ key: 'USD', label: '$ USD' }, { key: 'EUR', label: '€ EUR' }, { key: 'OTHER', label: isOther ? `${curNow.key} ▾` : t('Other ▾') }]}
             value={showOther || isOther ? 'OTHER' : currency}
             onChange={k => { if (k === 'OTHER') setShowOther(true); else { setShowOther(false); setCurrencyPref(k); } }}
           />
@@ -339,7 +354,7 @@ export function Settings() {
             <View style={{ marginTop: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 42, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12 }}>
                 <Icon name="search" size={17} color={C.stone} />
-                <TextInput value={q} onChangeText={setQ} placeholder="Search currency" placeholderTextColor={C.stone} autoCorrect={false} style={{ flex: 1, fontFamily: F.medium, fontSize: 15, color: C.ink }} />
+                <TextInput value={q} onChangeText={setQ} placeholder={t("Search currency")} placeholderTextColor={C.stone} autoCorrect={false} style={{ flex: 1, fontFamily: F.medium, fontSize: 15, color: C.ink }} />
               </View>
               <View style={{ maxHeight: 280, marginTop: 6 }}>
                 <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
@@ -356,42 +371,42 @@ export function Settings() {
                       </Pressable>
                     );
                   })}
-                  {others.length === 0 ? <Text style={[T.small, { paddingVertical: 12 }]}>No currency matches "{q}".</Text> : null}
+                  {others.length === 0 ? <Text style={[T.small, { paddingVertical: 12 }]}>{t("No currency matches \"")}{q}".</Text> : null}
                 </ScrollView>
               </View>
             </View>
           ) : null}
-          <Text style={[T.small, { marginTop: 10 }]}>{currency === 'USD' ? 'Prices are tracked in US dollars.' : `Prices are tracked in US dollars and shown at a fixed demo rate: $1 = ${curNow.symbol.trim()} ${curNow.rate}.`}</Text>
+          <Text style={[T.small, { marginTop: 10 }]}>{currency === 'USD' ? t('Prices are tracked in US dollars.') : t('Prices are tracked in US dollars and shown at a fixed demo rate: $1 = {rate}.', { rate: `${curNow.symbol.trim()} ${curNow.rate}` })}</Text>
         </Section>
-        <Section label="BOX AND PAPERS">
-          <Text style={[T.body, { marginBottom: 10 }]}>Default for new watches</Text>
-          <Segmented options={PAPERS} value={answers.papers} onChange={p => setAnswers({ papers: p })} />
+        <Section label={t("BOX AND PAPERS")}>
+          <Text style={[T.body, { marginBottom: 10 }]}>{t("Default for new watches")}</Text>
+          <Segmented options={PAPERS.map(p => ({ ...p, label: t(p.label) }))} value={answers.papers} onChange={p => setAnswers({ papers: p })} />
         </Section>
-        <Section label="CROWN PRO">
+        <Section label={t("CROWN PRO")}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View>
-              <Text style={T.b}>{pro ? 'Pro is on' : 'Free plan'}</Text>
-              <Text style={T.small}>{pro ? 'Unlimited watches, alerts, 5-year history' : '1 watch, no alerts'}</Text>
+              <Text style={T.b}>{pro ? t('Pro is on') : t('Free plan')}</Text>
+              <Text style={T.small}>{pro ? t('Unlimited watches, alerts, 5-year history') : t('1 watch, no alerts')}</Text>
             </View>
             {pro
-              ? <Pressable onPress={() => { Haptics.selectionAsync(); setPro(false); }} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>Cancel</Text></Pressable>
-              : <Pressable onPress={() => go('paywall')}><Pill text="Try Pro" bg={C.greenSoft} fg={C.green} /></Pressable>}
+              ? <Pressable onPress={() => { Haptics.selectionAsync(); setPro(false); }} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>{t("Cancel")}</Text></Pressable>
+              : <Pressable onPress={() => go('paywall')}><Pill text={t("Try Pro")} bg={C.greenSoft} fg={C.green} /></Pressable>}
           </View>
-          {pro ? <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>Demo: no payment was taken.</Text> : null}
+          {pro ? <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{t("Demo: no payment was taken.")}</Text> : null}
         </Section>
-        <Section label="ABOUT">
-          <Text style={T.body}>Crown is a course prototype.</Text>
-          <Text style={[T.small, { marginTop: 4 }]}>Prices are demo data, not live market data. Your collection is stored only on this device.</Text>
-          {feedback.yes + feedback.no ? <Text style={[T.small, { marginTop: 4 }]}>Your match feedback: {feedback.yes} right, {feedback.no} wrong.</Text> : null}
+        <Section label={t("ABOUT")}>
+          <Text style={T.body}>{t("Crown is a course prototype.")}</Text>
+          <Text style={[T.small, { marginTop: 4 }]}>{t("Prices are demo data, not live market data. Your collection is stored only on this device.")}</Text>
+          {feedback.yes + feedback.no ? <Text style={[T.small, { marginTop: 4 }]}>{t('Your match feedback: {a} right, {b} wrong.', { a: feedback.yes, b: feedback.no })}</Text> : null}
           <Pressable
             onPress={() => { if (!confirm) { Haptics.selectionAsync(); setConfirm(true); } else reset(); }}
             style={{ marginTop: 14, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: confirm ? C.downSoft : C.paper, borderWidth: 1, borderColor: confirm ? C.downSoft : C.line }}
             accessibilityRole="button"
           >
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>{confirm ? 'Tap again: delete everything and start over' : 'Reset demo'}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.down }}>{confirm ? t('Tap again: delete everything and start over') : t('Reset demo')}</Text>
           </Pressable>
         </Section>
-        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>Crown 1.3 · Made by Batu Öncel</Text>
+        <Text style={[T.small, { textAlign: 'center', marginTop: 20, fontSize: 12 }]}>{t("Crown 1.3 · Made by Batu Öncel")}</Text>
       </ScrollView>
       <TabBar active="settings" />
     </View>

@@ -6,17 +6,18 @@ import { C, F, display, money, num } from '../theme';
 import { BottomCTA, Button, Card, Enter, Icon, LineChart, Logo, Pill, Progress, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { Answers, BRANDS, MODELS, planSlots } from '../data';
 import { useStore } from '../store';
+import { t } from '../i18n';
 
 // Demo switch between the classic and navy themes.
 export function ThemeToggle() {
   const { theme, setTheme } = useStore();
-  return <RoundButton icon="contrast" label={theme === 'navy' ? 'Switch to classic theme' : 'Switch to navy theme'} onPress={() => { Haptics.selectionAsync(); setTheme(theme === 'navy' ? 'classic' : 'navy'); }} />;
+  return <RoundButton icon="contrast" label={theme === 'navy' ? t('Switch to classic theme') : t('Switch to navy theme')} onPress={() => { Haptics.selectionAsync(); setTheme(theme === 'navy' ? 'classic' : 'navy'); }} />;
 }
 
 export function TopBar({ step, onBack }: { step: number; onBack?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, height: 44 }}>
-      {onBack ? <RoundButton icon="back" onPress={onBack} label="Back" /> : null}
+      {onBack ? <RoundButton icon="back" onPress={onBack} label={t("Back")} /> : null}
       <Progress step={step} />
     </View>
   );
@@ -40,7 +41,7 @@ function SlideScan({ y }: { y: Animated.AnimatedInterpolation<number> }) {
       <Enter delay={500} style={{ position: 'absolute', right: 20, bottom: '12%' }}>
         <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={14} color={C.onPrimary} w={2.4} /></View>
-          <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }}>Rolex 126610LN · 94%</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.ink }}>{t("Rolex 126610LN · 94%")}</Text>
         </View>
       </Enter>
     </View>
@@ -55,28 +56,28 @@ function SlideValue({ width }: { width: number }) {
       <View style={[tag(), { width: Math.min(width - 64, 300), padding: 18 }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View>
-            <Text style={T.label}>WORTH TODAY</Text>
+            <Text style={T.label}>{t("WORTH TODAY")}</Text>
             <Text style={{ fontFamily: F.serif, ...display(28), lineHeight: 34, color: C.ink }}>{money(13900)}–{num(15600)}</Text>
-            <Text style={[T.small, { fontSize: 12 }]}>Full box and papers</Text>
+            <Text style={[T.small, { fontSize: 12 }]}>{t("Full box and papers")}</Text>
           </View>
           <Pill text="▲ 4.2%" bg={C.upSoft} fg={C.up} />
         </View>
         <View style={{ marginTop: 12 }}><LineChart data={data} width={Math.min(width - 64, 300) - 36} height={64} color={C.up} /></View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-          <Text style={[T.small, { fontSize: 11 }]}>12 months ago</Text>
-          <Text style={[T.small, { fontSize: 11 }]}>Today</Text>
+          <Text style={[T.small, { fontSize: 11 }]}>{t("12 months ago")}</Text>
+          <Text style={[T.small, { fontSize: 11 }]}>{t("Today")}</Text>
         </View>
       </View>
       <Enter delay={400} style={{ position: 'absolute', left: 22, top: '10%' }}>
         <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
           <Icon name="box" size={16} color={C.brassInk} />
-          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>Box & papers +6%</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>{t("Box & papers +6%")}</Text>
         </View>
       </Enter>
       <Enter delay={700} style={{ position: 'absolute', right: 22, bottom: '10%' }}>
         <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
           <Icon name="chart" size={16} color={C.green} />
-          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>1,840 listings checked</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>{t("1,840 listings checked")}</Text>
         </View>
       </Enter>
     </View>
@@ -94,7 +95,7 @@ function SlideCollection({ width }: { width: number }) {
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: C.halo }} />
       <View style={[tag(), { width: w, padding: 16 }]}>
-        <Text style={T.label}>YOUR COLLECTION</Text>
+        <Text style={T.label}>{t("YOUR COLLECTION")}</Text>
         <Text style={{ fontFamily: F.serif, ...display(34), lineHeight: 40, color: C.ink }}>{money(29800)}</Text>
         {rows.map(r => (
           <View key={r.b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
@@ -112,7 +113,7 @@ function SlideCollection({ width }: { width: number }) {
       <Enter delay={500} style={{ position: 'absolute', left: 18, top: '9%' }}>
         <View style={[tag(), { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 }]}>
           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.brass, alignItems: 'center', justifyContent: 'center' }}><Icon name="bell" size={13} color="#FFFFFF" w={2} /></View>
-          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>Submariner is up 5%</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: C.ink }}>{t("Submariner is up 5%")}</Text>
         </View>
       </Enter>
     </View>
@@ -142,7 +143,7 @@ export function Promise_() {
         <Logo onLongPress={reset} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <ThemeToggle />
-          {!last ? <Pressable onPress={() => go('goal')} hitSlop={10} accessibilityRole="button"><Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>Skip</Text></Pressable> : null}
+          {!last ? <Pressable onPress={() => go('goal')} hitSlop={10} accessibilityRole="button"><Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.stone }}>{t("Skip")}</Text></Pressable> : null}
         </View>
       </View>
       <ScrollView
@@ -159,21 +160,21 @@ export function Promise_() {
           <View key={i} style={{ width, flex: 1 }}>
             {i === 0 ? <SlideScan y={y} /> : i === 1 ? <SlideValue width={width} /> : <SlideCollection width={width} />}
             <View style={{ paddingHorizontal: 24, minHeight: 150 }}>
-              <Text style={T.h1}>{s.title}</Text>
-              <Text style={T.sub}>{s.sub}</Text>
+              <Text style={T.h1}>{t(s.title)}</Text>
+              <Text style={T.sub}>{t(s.sub)}</Text>
             </View>
           </View>
         ))}
       </ScrollView>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 10 }} accessibilityLabel={`Slide ${page + 1} of ${SLIDES.length}`}>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 10 }} accessibilityLabel={t('Slide {a} of {b}', { a: page + 1, b: SLIDES.length })}>
         {SLIDES.map((_, i) => (
           <Pressable key={i} onPress={() => to(i)} hitSlop={6}>
             <View style={{ width: i === page ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === page ? C.green : C.line }} />
           </Pressable>
         ))}
       </View>
-      <BottomCTA note="Takes about 60 seconds">
-        <Button title={last ? 'Get started' : 'Continue'} onPress={next} />
+      <BottomCTA note={t("Takes about 60 seconds")}>
+        <Button title={last ? t('Get started') : t('Continue')} onPress={next} />
       </BottomCTA>
     </View>
   );
@@ -192,9 +193,9 @@ export function Goal() {
     <View style={{ flex: 1 }}>
       <TopBar step={2} onBack={() => go('promise')} />
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24 }}>
-        <Text style={T.eyebrow}>Your goal</Text>
-        <Text style={[T.h2, { marginTop: 10 }]}>What brings you to Crown?</Text>
-        <Text style={[T.sub, { marginBottom: 24 }]}>We'll shape your plan around it.</Text>
+        <Text style={T.eyebrow}>{t("Your goal")}</Text>
+        <Text style={[T.h2, { marginTop: 10 }]}>{t("What brings you to Crown?")}</Text>
+        <Text style={[T.sub, { marginBottom: 24 }]}>{t("We'll shape your plan around it.")}</Text>
         {GOALS.map((g, i) => {
           const sel = answers.goal === g.key;
           return (
@@ -203,8 +204,8 @@ export function Goal() {
                 <Card selected={sel} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: sel ? 17 : 18, marginBottom: 12 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: sel ? C.greenSoft : C.paper, alignItems: 'center', justifyContent: 'center' }}><Icon name={g.icon} size={24} color={sel ? C.green : C.ink} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={T.b}>{g.title}</Text>
-                    <Text style={[T.small, { fontSize: 13.5 }]}>{g.sub}</Text>
+                    <Text style={T.b}>{t(g.title)}</Text>
+                    <Text style={[T.small, { fontSize: 13.5 }]}>{t(g.sub)}</Text>
                   </View>
                   <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: sel ? 7 : 2, borderColor: sel ? C.green : C.line }} />
                 </Card>
@@ -214,7 +215,7 @@ export function Goal() {
         })}
       </View>
       <BottomCTA>
-        <Button title="Continue" disabled={!answers.goal} onPress={() => go('about')} />
+        <Button title={t("Continue")} disabled={!answers.goal} onPress={() => go('about')} />
       </BottomCTA>
     </View>
   );
@@ -229,7 +230,7 @@ function Seg<T extends string>({ items, value, onChange }: { items: T[]; value: 
         return (
           <Pressable key={it} style={{ flex: 1 }} onPress={() => { Haptics.selectionAsync(); onChange(it); }} accessibilityRole="radio" accessibilityState={{ selected: s }}>
             <View style={{ height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: s ? C.green : C.surface, borderWidth: 1, borderColor: s ? C.green : C.line }}>
-              <Text style={{ fontFamily: F.semibold, fontSize: 15, color: s ? C.onPrimary : C.ink }}>{it}</Text>
+              <Text style={{ fontFamily: F.semibold, fontSize: 15, color: s ? C.onPrimary : C.ink }}>{t(it)}</Text>
             </View>
           </Pressable>
         );
@@ -248,19 +249,19 @@ export function About() {
     <View style={{ flex: 1 }}>
       <TopBar step={3} onBack={() => go('goal')} />
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24 }}>
-        <Text style={T.eyebrow}>About your watches</Text>
-        <Text style={[T.h2, { marginTop: 10 }]}>Tell us what you own.</Text>
-        <Text style={T.sub}>Three quick answers. Each one changes your value.</Text>
+        <Text style={T.eyebrow}>{t("About your watches")}</Text>
+        <Text style={[T.h2, { marginTop: 10 }]}>{t("Tell us what you own.")}</Text>
+        <Text style={T.sub}>{t("Three quick answers. Each one changes your value.")}</Text>
 
         <View style={{ marginTop: 26 }}>
-          <Text style={[T.b, { fontSize: 15 }]}>How many watches do you have?</Text>
-          <Text style={[T.small, { fontSize: 12.5 }]}>Sets how many your plan tracks</Text>
+          <Text style={[T.b, { fontSize: 15 }]}>{t("How many watches do you have?")}</Text>
+          <Text style={[T.small, { fontSize: 12.5 }]}>{t("Sets how many your plan tracks")}</Text>
           <Seg items={['1', '2–3', '4–10', '10+'] as NonNullable<Answers['count']>[]} value={answers.count} onChange={v => setAnswers({ count: v })} />
         </View>
 
         <View style={{ marginTop: 26 }}>
-          <Text style={[T.b, { fontSize: 15 }]}>Which brands?</Text>
-          <Text style={[T.small, { fontSize: 12.5 }]}>We load their price history first</Text>
+          <Text style={[T.b, { fontSize: 15 }]}>{t("Which brands?")}</Text>
+          <Text style={[T.small, { fontSize: 12.5 }]}>{t("We load their price history first")}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
             {BRANDS.map(b => {
               const s = answers.brands.includes(b);
@@ -268,7 +269,7 @@ export function About() {
                 <Pressable key={b} onPress={() => toggle(b)} accessibilityRole="checkbox" accessibilityState={{ checked: s }}>
                   <View style={{ height: 40, paddingHorizontal: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: s ? C.greenSoft : C.surface, borderWidth: s ? 1.5 : 1, borderColor: s ? C.green : C.line }}>
                     {s ? <Icon name="check" size={14} color={C.green} w={2.4} /> : null}
-                    <Text style={{ fontFamily: F.semibold, fontSize: 14.5, color: s ? C.green : C.ink }}>{b}</Text>
+                    <Text style={{ fontFamily: F.semibold, fontSize: 14.5, color: s ? C.green : C.ink }}>{t(b)}</Text>
                   </View>
                 </Pressable>
               );
@@ -277,13 +278,13 @@ export function About() {
         </View>
 
         <View style={{ marginTop: 26 }}>
-          <Text style={[T.b, { fontSize: 15 }]}>Do you keep the box and papers?</Text>
-          <Text style={[T.small, { fontSize: 12.5 }]}>A full set adds 5–15% to most values</Text>
+          <Text style={[T.b, { fontSize: 15 }]}>{t("Do you keep the box and papers?")}</Text>
+          <Text style={[T.small, { fontSize: 12.5 }]}>{t("A full set adds 5–15% to most values")}</Text>
           <Seg items={['Yes', 'Some', 'No'] as NonNullable<Answers['papers']>[]} value={answers.papers} onChange={v => setAnswers({ papers: v })} />
         </View>
       </View>
       <BottomCTA>
-        <Button title="Build my plan" disabled={!done} onPress={() => go('planLoading')} />
+        <Button title={t("Build my plan")} disabled={!done} onPress={() => go('planLoading')} />
       </BottomCTA>
     </View>
   );
@@ -292,11 +293,11 @@ export function About() {
 // ---------- 4a. Building your plan ----------
 const brandList = (b: string[]) => {
   const n = b.filter(x => x !== 'Other');
-  if (n.length === 0) return 'your brands';
+  if (n.length === 0) return t('your brands');
   if (n.length === 1) return n[0];
-  return n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
+  return n.slice(0, -1).join(', ') + ' ' + t('and') + ' ' + n[n.length - 1];
 };
-const papersLine = (p: Answers['papers']) => (p === 'Yes' ? 'Adding about +6% for a full set' : p === 'Some' ? 'Keeping values as listed for a partial set' : 'Taking about −7% for no box or papers');
+const papersLine = (p: Answers['papers']) => (p === 'Yes' ? t('Adding about +6% for a full set') : p === 'Some' ? t('Keeping values as listed for a partial set') : t('Taking about −7% for no box or papers'));
 
 export function PlanLoading() {
   const { go, answers } = useStore();
@@ -313,9 +314,9 @@ export function PlanLoading() {
   }, []);
   const R = 86, CIRC = 2 * Math.PI * R;
   const steps = [
-    { t: `Loading ${brandList(answers.brands)} prices`, s: `${refs.toLocaleString('en-US')} references`, at: 30 },
-    { t: 'Adjusting for box and papers', s: papersLine(answers.papers), at: 65 },
-    { t: `Setting alerts for ${answers.count ?? '1'} watches`, s: 'Alert at ±5%', at: 95 },
+    { t: t('Loading {brands} prices', { brands: brandList(answers.brands) }), s: t('{n} references', { n: refs.toLocaleString('en-US') }), at: 30 },
+    { t: t('Adjusting for box and papers'), s: papersLine(answers.papers), at: 65 },
+    { t: t('Setting alerts for {n} watches', { n: answers.count ?? '1' }), s: t('Alert at ±5%'), at: 95 },
   ];
   return (
     <View style={{ flex: 1 }}>
@@ -330,7 +331,7 @@ export function PlanLoading() {
             <Text style={{ fontFamily: F.serif, ...display(56), color: C.ink }}>{pct}%</Text>
           </View>
         </View>
-        <Text style={[T.h2, { marginTop: 32 }]}>Building your plan…</Text>
+        <Text style={[T.h2, { marginTop: 32 }]}>{t("Building your plan…")}</Text>
         <Card style={{ alignSelf: 'stretch', marginTop: 26 }}>
           {steps.map((st, i) => {
             const done = pct >= st.at, active = !done && (i === 0 || pct >= steps[i - 1].at);
@@ -363,24 +364,24 @@ export function Spinner({ color = C.green, size = 16 }: { color?: string; size?:
 export function Plan() {
   const { go, answers } = useStore();
   const slots = planSlots(answers.count);
-  const goalTitle = answers.goal === 'sell' ? 'Know the right moment to sell.' : answers.goal === 'buy' ? 'Pay a fair price, every time.' : 'Your collection, watched for you.';
+  const goalTitle = answers.goal === 'sell' ? t('Know the right moment to sell.') : answers.goal === 'buy' ? t('Pay a fair price, every time.') : t('Your collection, watched for you.');
   const rows = [
-    { icon: 'watch', t: `Track up to ${slots} watch${slots > 1 ? 'es' : ''}`, s: `${brandList(answers.brands)} price history loaded` },
+    { icon: 'watch', t: slots > 1 ? t('Track up to {n} watches', { n: slots }) : t('Track 1 watch'), s: t('{brands} price history loaded', { brands: brandList(answers.brands) }) },
     answers.goal === 'buy'
-      ? { icon: 'search', t: 'Fair-price check on any listing', s: 'Scan a watch in a shop window or online' }
-      : { icon: 'cal', t: 'Value check every Sunday', s: 'Your collection total, in one number' },
+      ? { icon: 'search', t: t('Fair-price check on any listing'), s: t('Scan a watch in a shop window or online') }
+      : { icon: 'cal', t: t('Value check every Sunday'), s: t('Your collection total, in one number') },
     answers.goal === 'sell'
-      ? { icon: 'bell', t: 'Sell alert when a watch is up 5%', s: 'We tell you when the market is with you' }
-      : { icon: 'bell', t: 'Alert if a watch moves ±5%', s: 'So a drop never surprises you' },
-    { icon: 'box', t: `Adjusted for ${answers.papers === 'Yes' ? 'a full set' : answers.papers === 'Some' ? '"some" box and papers' : 'no box or papers'}`, s: 'Ranges you can actually sell at' },
+      ? { icon: 'bell', t: t('Sell alert when a watch is up 5%'), s: t('We tell you when the market is with you') }
+      : { icon: 'bell', t: t('Alert if a watch moves ±5%'), s: t('So a drop never surprises you') },
+    { icon: 'box', t: answers.papers === 'Yes' ? t('Adjusted for a full set') : answers.papers === 'Some' ? t('Adjusted for some box and papers') : t('Adjusted for no box or papers'), s: t('Ranges you can actually sell at') },
   ];
   return (
     <View style={{ flex: 1 }}>
       <TopBar step={4} onBack={() => go('about')} />
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24 }}>
-        <Text style={T.eyebrow}>Your plan</Text>
+        <Text style={T.eyebrow}>{t("Your plan")}</Text>
         <Text style={[T.h2, { marginTop: 10 }]}>{goalTitle}</Text>
-        <Text style={[T.sub, { marginBottom: 20 }]}>Built from your answers. You can change it any time.</Text>
+        <Text style={[T.sub, { marginBottom: 20 }]}>{t("Built from your answers. You can change it any time.")}</Text>
         <Card>
           {rows.map((r, i) => (
             <Enter key={i} delay={120 * i}>
@@ -396,11 +397,11 @@ export function Plan() {
         </Card>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16, paddingHorizontal: 4 }}>
           <Icon name="info" size={18} color={C.stone} />
-          <Text style={[T.small, { flex: 1, fontSize: 12.5 }]}>Values come from 12 months of listed prices, not one shop's asking price. Demo data in this prototype.</Text>
+          <Text style={[T.small, { flex: 1, fontSize: 12.5 }]}>{t("Values come from 12 months of listed prices, not one shop's asking price. Demo data in this prototype.")}</Text>
         </View>
       </View>
       <BottomCTA>
-        <Button title="Scan my first watch" icon="scan" onPress={() => go('priming')} />
+        <Button title={t("Scan my first watch")} icon="scan" onPress={() => go('priming')} />
       </BottomCTA>
     </View>
   );
