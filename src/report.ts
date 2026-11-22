@@ -39,7 +39,7 @@ export function buildReportHtml(o: ReportOptions) {
             <div class="num">${i + 1} / ${tot.count}</div>
             <div class="brand">${esc(m.brand)}</div>
             <h2>${esc(m.name)}</h2>
-            <div class="value">${money(round50(v.mid))}</div>
+            <div class="value">${v.mid ? money(round50(v.mid)) : esc(t("No price yet"))}</div>
             <div class="range">${esc(t('Value range'))}: ${money(round50(v.low))} – ${money(round50(v.high))}</div>
           </div>
         </div>

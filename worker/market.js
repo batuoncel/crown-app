@@ -98,7 +98,7 @@ async function identify(req, env) {
   const image = typeof body?.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
   if (!image || image.length > MAX_IMAGE_B64) return json({ error: 'bad-image' }, 400);
   const model = env.GEMINI_MODEL || GEMINI_MODEL;
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const call = () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
     body: JSON.stringify({
@@ -106,6 +106,9 @@ async function identify(req, env) {
       generationConfig: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 400 },
     }),
   });
+  let r = await call();
+  // the free tier is sometimes briefly overloaded: try once more
+  if (r.status === 429 || r.status >= 500) { await new Promise(res => setTimeout(res, 1200)); r = await call(); }
   if (!r.ok) return json({ error: 'gemini ' + r.status }, 502);
   const data = await r.json();
   const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';

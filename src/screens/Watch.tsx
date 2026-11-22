@@ -8,7 +8,7 @@ import { pickBackup, saveBackup } from '../backup';
 import { TabBar } from './Home';
 import { SellSignalCard } from './Signal';
 import { MarketCard } from './MarketCard';
-import { Answers, CONDITIONS, LIVE, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
+import { Answers, CONDITIONS, LIVE, hasPrice, Condition, MONTHS, SERVICE_YEARS, byId, change12, ownedValue, serviceDue } from '../data';
 import { useStore } from '../store';
 import { ThemeName } from '../theme';
 import { AVAILABLE_LANGS, LANGS, fmtDate, locale, t } from '../i18n';
@@ -54,7 +54,8 @@ export function WatchDetail() {
   const m = byId(owned.modelId);
   const papers = owned.papers ?? answers.papers;
   const v = ownedValue(owned, answers.papers);
-  const series = m.history.map(x => x * (v.mid / m.history[12]));
+  const priced = hasPrice(m) && m.history.length > 0;
+  const series = priced ? m.history.map(x => x * (v.mid / m.history[12])) : [0, 0];
   const n = range === '6M' ? 7 : 13;
   const shown = series.slice(13 - n);
   const ch = ((shown[shown.length - 1] - shown[0]) / shown[0]) * 100;
@@ -91,6 +92,7 @@ export function WatchDetail() {
           <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {t(m.material)}</Text>
         </View>
 
+        {priced ? (
         <Card style={{ padding: 18, marginTop: 18 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
@@ -119,11 +121,18 @@ export function WatchDetail() {
           </View>
           {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>{t("Demo data covers 12 months.")}</Text> : null}
         </Card>
+        ) : (
+        <Card style={{ padding: 18, marginTop: 18 }}>
+          <Text style={T.label}>NO PRICE YET</Text>
+          <Text style={[T.body, { marginTop: 6 }]}>Crown recognised this watch but has no market prices for it yet.</Text>
+          <Text style={[T.small, { marginTop: 6 }]}>Its value appears here as soon as live eBay prices are connected. You can still add what you paid, the condition and the serial number.</Text>
+        </Card>
+        )}
 
         <MarketCard m={m} paid={owned.paid} />
 
         {/* the trend signal needs price history; live eBay data has none yet */}
-        {LIVE[m.id] ? null : <SellSignalCard m={m} factor={v.mid / m.history[12]} />}
+        {LIVE[m.id] || !priced ? null : <SellSignalCard m={m} factor={v.mid / m.history[12]} />}
 
         <Card style={{ padding: 18, marginTop: 12 }}>
           <Text style={T.label}>{t("WHAT YOU PAID")}</Text>

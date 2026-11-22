@@ -54,7 +54,18 @@ export const BRANDS = ['Rolex', 'Omega', 'Tudor', 'Seiko', 'Cartier', 'TAG Heuer
 
 export const MONTHS = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
 
-export const byId = (id: string) => MODELS.find(m => m.id === id)!;
+// watches recognised outside the catalogue (registered by the store from saved data)
+export const CUSTOM: Record<string, Model> = {};
+export const byId = (id: string) => (MODELS.find(m => m.id === id) ?? CUSTOM[id])!;
+
+// a recognised watch we have no catalogue entry for: no price history, value comes from live market data later
+export function customModel(x: { brand: string; model: string; reference: string }): Model {
+  const key = (x.brand + '-' + (x.reference || x.model)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return { id: 'c-' + key, brand: x.brand || 'Unknown', name: x.model || 'Watch', ref: x.reference, size: '', material: '', dial: '#141714', dialHi: '#2A2E2A', kind: 'diver', history: [], spread: 0.08 };
+}
+
+// true when Crown can show a value for this model (catalogue history or live market data)
+export const hasPrice = (m: Model) => m.history.length > 0 || !!LIVE[m.id];
 
 export type Answers = {
   goal: 'track' | 'sell' | 'buy' | null;
@@ -76,6 +87,7 @@ export const valueOf = (m: Model, papers: Answers['papers'], condition?: Conditi
   const f = papersFactor(papers) * conditionFactor(condition);
   const live = LIVE[m.id];
   if (live) return { mid: live.median * f, low: live.p25 * f, high: live.p75 * f };
+  if (!m.history.length) return { mid: 0, low: 0, high: 0 };
   const mid = m.history[m.history.length - 1] * f;
   return { mid, low: mid * (1 - m.spread), high: mid * (1 + m.spread) };
 };
@@ -93,6 +105,7 @@ export const serviceDue = (lastService?: string) => {
 };
 
 export const change12 = (m: Model) => {
+  if (m.history.length < 2) return 0;
   const a = m.history[0], b = m.history[m.history.length - 1];
   return ((b - a) / a) * 100;
 };

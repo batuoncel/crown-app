@@ -7,6 +7,7 @@ import { C, F, display, money, num, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { pickPhoto, shrink } from '../photo';
 import { LIVE_SCAN, identifyPhoto, matchModel } from '../identify';
+import { customModel, hasPrice } from '../data';
 import { change12, Model, MODELS, recognise, valueOf } from '../data';
 import { useStore } from '../store';
 import { Spinner, TopBar } from './Onboarding';
@@ -199,6 +200,7 @@ export function Analysing() {
     if (LIVE_SCAN && scan.photo) {
       let alive = true;
       identifyPhoto(scan.photo)
+        .catch(() => new Promise(r => setTimeout(r, 800)).then(() => identifyPhoto(scan.photo!)))
         .then(async res => {
           await new Promise(r => setTimeout(r, Math.max(0, 2500 - (Date.now() - started))));
           if (!alive) return;
@@ -214,12 +216,16 @@ export function Analysing() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setScan({ ...scan, options: [best, ...alts].filter((m): m is NonNullable<typeof m> => !!m).slice(0, 3), confidence: res.confidence });
             go('partial');
+          } else if (res.brand) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setScan({ ...scan, model: customModel(res), confidence: res.confidence, confirmed: false });
+            go('result');
           } else {
             setScan({ ...scan, unknown: { brand: res.brand, model: res.model, reference: res.reference } });
             go('result');
           }
         })
-        .catch(() => { if (alive) { setScan({ ...scan, failed: true }); go('result'); } });
+        .catch((e: Error) => { if (alive) { setScan({ ...scan, failed: true, error: String(e?.message ?? e).slice(0, 40) }); go('result'); } });
       return () => { alive = false; clearTimeout(t1); clearTimeout(t2); };
     }
     const t3 = setTimeout(() => {
@@ -301,6 +307,7 @@ export function Result() {
           <Text style={{ fontFamily: F.serif, ...display(32), lineHeight: 36, color: C.ink, textAlign: 'center' }}>{m.name}</Text>
           <Text style={[T.small, { marginTop: 4 }]}>{m.ref} · {m.size} · {t(m.material)}</Text>
         </Enter>
+        {hasPrice(m) ? (
         <Enter delay={300} style={{ paddingHorizontal: 24, marginTop: 18 }}>
           <Card style={{ padding: 18, paddingBottom: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -325,6 +332,15 @@ export function Result() {
             ) : null}
           </Card>
         </Enter>
+        ) : (
+        <Enter delay={300} style={{ paddingHorizontal: 24, marginTop: 18 }}>
+          <Card style={{ padding: 18 }}>
+            <Text style={T.label}>NO PRICE YET</Text>
+            <Text style={[T.body, { marginTop: 6 }]}>We recognised this watch, but we don't have market prices for it yet.</Text>
+            <Text style={[T.small, { marginTop: 6 }]}>Add it to keep it in your collection. Its value will appear as soon as Crown has market data for this model.</Text>
+          </Card>
+        </Enter>
+        )}
         <Enter delay={400} style={{ paddingHorizontal: 24, marginTop: 10 }}>
           <Pressable onPress={() => openGuide('fake')} accessibilityRole="button">
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 4 }}>
@@ -389,11 +405,13 @@ function NoMatch() {
       : u
         ? `Crown recognised ${[u.brand, u.model, u.reference].filter(Boolean).join(' ')}. Prices for this model are coming soon. You can still search for a close match.`
         : 'Nothing was saved. Try the photo again.';
+  const code = scan.failed && scan.error ? ` (${scan.error})` : '';
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <Icon name={u ? 'watch' : 'alert'} size={36} color={C.brassInk} />
       <Text style={[T.h2, { textAlign: 'center', marginTop: 16 }]}>{title}</Text>
       <Text style={[T.sub, { textAlign: 'center' }]}>{sub}</Text>
+      {code ? <Text style={[T.small, { marginTop: 8, fontSize: 11 }]}>Error{code}</Text> : null}
       <Button title="Scan again" icon="refresh" onPress={() => go('priming')} style={{ marginTop: 24, paddingHorizontal: 32 }} />
       <Button title="Search by name" kind="ghost" onPress={() => go('search')} />
     </View>

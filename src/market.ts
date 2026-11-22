@@ -22,6 +22,7 @@ export type Market = {
 const searchUrl = (m: Model) => `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`${m.brand} ${m.ref}`)}&_sacat=31387`;
 
 function sample(m: Model): Market {
+  if (!m.history.length) return { source: 'sample', checkedAt: new Date().toISOString(), count: 0, listings: [] };
   const base = m.history[m.history.length - 1];
   const offsets = [-0.04, -0.02, -0.01, 0, 0.01, 0.03, 0.05];
   const listings = offsets.map((o, i) => ({

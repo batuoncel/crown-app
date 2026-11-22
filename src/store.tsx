@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Answers, Condition, LIVE, Model } from './data';
+import { Answers, CUSTOM, Condition, LIVE, Model } from './data';
 import type { Market } from './market';
 import { Currency, setCurrency, ThemeName } from './theme';
 import { Lang, setLang } from './i18n';
@@ -17,12 +17,12 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market> };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market>; customModels: Model[] };
 
 export type Scan = {
   photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean;
   // live recognition outcomes that have no catalogue match
-  unknown?: { brand: string; model: string; reference: string }; notWatch?: boolean; failed?: boolean;
+  unknown?: { brand: string; model: string; reference: string }; notWatch?: boolean; failed?: boolean; error?: string;
 };
 
 type Store = Persisted & {
@@ -78,6 +78,7 @@ const initial: Persisted = {
   feedback: { yes: 0, no: 0 },
   lang: 'en',
   market: {},
+  customModels: [],
 };
 
 // only real eBay data feeds values; sample listings never do
@@ -102,6 +103,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   setCurrency(s.currency); // cheap; keeps money() in sync before children render
   setLang(s.lang);
   syncLive(s.market ?? {});
+  for (const m of s.customModels ?? []) CUSTOM[m.id] = m;
   if (applied.current !== s.theme) {
     applyTheme(s.theme); // before children render, so they read the right palette
     applied.current = s.theme;
@@ -137,6 +139,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }),
     setScan,
     addWatch: (m, photo) => setS(p => {
+      if (m.id.startsWith('c-') && !(p.customModels ?? []).some(x => x.id === m.id)) p = { ...p, customModels: [...(p.customModels ?? []), m] };
       const prev = p.collection.find(o => o.modelId === m.id);
       const next: Owned = { ...prev, modelId: m.id, addedAt: prev?.addedAt ?? new Date().toISOString(), photo: photo ?? prev?.photo };
       return { ...p, collection: [...p.collection.filter(o => o.modelId !== m.id), next] };

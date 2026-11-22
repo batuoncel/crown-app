@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { C, F, display, money, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { GuideCarousel } from './Guide';
-import { byId, change12, conditionFactor, marketSignal, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
+import { byId, change12, hasPrice, conditionFactor, marketSignal, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
 import { fmtDate as fmtLocalDate, t } from '../i18n';
 
@@ -130,7 +130,7 @@ export function Home() {
   const [range, setRange] = useState<'1M' | '6M' | '1Y' | '5Y'>('1Y');
   const models = collection.map(o => byId(o.modelId));
   const slots = pro ? Infinity : 1;
-  const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + byId(o.modelId).history[i] * papersFactor(o.papers ?? answers.papers) * conditionFactor(o.condition), 0));
+  const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + (byId(o.modelId).history[i] ?? 0) * papersFactor(o.papers ?? answers.papers) * conditionFactor(o.condition), 0));
   const paidOnes = collection.filter(o => o.paid);
   const paidTotal = paidOnes.reduce((s, o) => s + (o.paid ?? 0), 0);
   const paidNow = paidOnes.reduce((s, o) => s + ownedValue(o, answers.papers).mid, 0);
@@ -216,7 +216,7 @@ export function Home() {
             const owned = collection[i], v = ownedValue(owned, answers.papers), ch = change12(m);
             return (
               <Enter key={m.id} delay={60 * i}>
-                <Pressable disabled={editing} onPress={() => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={t('Open {name}', { name: `${m.brand} ${m.name}` })}>
+                <Pressable onPress={editing ? undefined : () => { Haptics.selectionAsync(); openWatch(m.id); }} accessibilityRole="button" accessibilityLabel={t('Open {name}', { name: `${m.brand} ${m.name}` })}>
                 <Card style={{ marginTop: 12, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <WatchThumb photo={owned.photo} brand={m.brand} size={56} radius={14} />
                   <View style={{ flex: 1 }}>
@@ -231,8 +231,12 @@ export function Home() {
                     </Pressable>
                   ) : (
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ fontFamily: F.serif, ...display(20), color: C.ink }}>{money(v.mid)}</Text>
-                      <Text style={{ fontFamily: F.bold, fontSize: 12, color: ch >= 0 ? C.up : C.down }}>{pct(ch)}</Text>
+                      {hasPrice(m) ? (
+                        <>
+                          <Text style={{ fontFamily: F.serif, ...display(20), color: C.ink }}>{money(v.mid)}</Text>
+                          <Text style={{ fontFamily: F.bold, fontSize: 12, color: ch >= 0 ? C.up : C.down }}>{pct(ch)}</Text>
+                        </>
+                      ) : <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.stone }}>No price yet</Text>}
                     </View>
                   )}
                 </Card>
