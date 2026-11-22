@@ -185,7 +185,7 @@ function ConsentSheet({ onAgree, onLater }: { onAgree: () => void; onLater: () =
 
 // ---------- 6b. Analysing ----------
 export function Analysing() {
-  const { go, scan, setScan, answers, scanCount, bumpScan, accessCode } = useStore();
+  const { go, scan, setScan, answers, scanCount, bumpScan, accessCode, deviceId } = useStore();
   const [step, setStep] = useState(0);
   const sweep = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -199,9 +199,9 @@ export function Analysing() {
     // live recognition: send the photo to Gemini through the proxy, keep the animation at least 2.5 s
     if (LIVE_SCAN && scan.photo) {
       let alive = true;
-      identifyPhoto(scan.photo, accessCode ?? '')
-        // retry once, but not when the access code is wrong
-        .catch((e: Error) => String(e?.message).endsWith('401') ? Promise.reject(e) : new Promise(r => setTimeout(r, 800)).then(() => identifyPhoto(scan.photo!, accessCode ?? '')))
+      identifyPhoto(scan.photo, accessCode ?? '', deviceId ?? '')
+        // retry once, but not when a limit was reached
+        .catch((e: Error) => / 429/.test(String(e?.message)) ? Promise.reject(e) : new Promise(r => setTimeout(r, 800)).then(() => identifyPhoto(scan.photo!, accessCode ?? '', deviceId ?? '')))
         .then(async res => {
           await new Promise(r => setTimeout(r, Math.max(0, 2500 - (Date.now() - started))));
           if (!alive) return;
@@ -211,7 +211,7 @@ export function Analysing() {
           const alts = res.alternatives.map(matchModel).filter((m): m is NonNullable<typeof m> => !!m && m.id !== best?.id);
           if (best && res.confidence >= 80) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setScan({ ...scan, model: best, confidence: res.confidence, confirmed: false });
+            setScan({ ...scan, model: best, confidence: res.confidence, confirmed: false, scansLeft: res.scansLeft });
             go('result');
           } else if (best || alts.length) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -219,7 +219,7 @@ export function Analysing() {
             go('partial');
           } else if (res.brand) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setScan({ ...scan, model: customModel(res), confidence: res.confidence, confirmed: false });
+            setScan({ ...scan, model: customModel(res), confidence: res.confidence, confirmed: false, scansLeft: res.scansLeft });
             go('result');
           } else {
             setScan({ ...scan, unknown: { brand: res.brand, model: res.model, reference: res.reference } });
@@ -303,6 +303,7 @@ export function Result() {
             <Pill text={scan.confirmed ? t('Chosen by you') : t('High match · {n}%', { n: scan.confidence ?? 94 })} bg={C.green} fg={C.onPrimary} icon="check" />
           </View>
         </View>
+        {typeof scan.scansLeft === 'number' ? <Text style={[T.small, { textAlign: 'center', marginTop: 10, fontSize: 12 }]}>{scan.scansLeft === 1 ? '1 free scan left today' : `${scan.scansLeft} free scans left today`}</Text> : null}
         <Enter delay={150} style={{ alignItems: 'center', paddingHorizontal: 24, marginTop: 16 }}>
           <Text style={[T.label, { fontSize: 13 }]}>{m.brand.toUpperCase()}</Text>
           <Text style={{ fontFamily: F.serif, ...display(32), lineHeight: 36, color: C.ink, textAlign: 'center' }}>{m.name}</Text>
@@ -398,17 +399,17 @@ function MatchFeedback({ vote, onVote, onScan, onSearch }: { vote: 'yes' | 'no' 
 function NoMatch() {
   const { go, scan } = useStore();
   const u = scan.unknown;
-  const locked = scan.failed && scan.error?.endsWith('401');
-  const busy = scan.failed && scan.error?.endsWith('429');
-  const title = locked ? 'Scanning is invite-only for now.' : busy ? 'Too many scans in a row.' : scan.notWatch ? "We couldn't see a watch." : scan.failed ? "We couldn't reach the scanner." : u ? 'We know this one, but not its price yet.' : 'We lost that scan.';
-  const sub = locked ? 'Enter your access code in Settings to scan. You can still find your watch by name.' : busy ? 'Wait a minute, then try again.' : scan.notWatch
+  const locked = scan.failed && !!scan.error?.includes('daily-limit');
+  const busy = scan.failed && !locked && !!scan.error?.includes('429');
+  const title = locked ? "You've used today's 3 free scans." : busy ? 'Too many scans in a row.' : scan.notWatch ? "We couldn't see a watch." : scan.failed ? "We couldn't reach the scanner." : u ? 'We know this one, but not its price yet.' : 'We lost that scan.';
+  const sub = locked ? 'Come back tomorrow for 3 more. You can still find your watch by name.' : busy ? 'Wait a minute, then try again.' : scan.notWatch
     ? 'Fill the frame with the dial, straight on, in soft light.'
     : scan.failed
       ? 'Check your connection and try again. Nothing was saved.'
       : u
         ? `Crown recognised ${[u.brand, u.model, u.reference].filter(Boolean).join(' ')}. Prices for this model are coming soon. You can still search for a close match.`
         : 'Nothing was saved. Try the photo again.';
-  const code = scan.failed && scan.error ? ` (${scan.error})` : '';
+  const code = scan.failed && scan.error && !locked && !busy ? ` (${scan.error})` : '';
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <Icon name={u ? 'watch' : 'alert'} size={36} color={C.brassInk} />

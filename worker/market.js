@@ -69,7 +69,8 @@ export function clean(items, ref, name) {
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Crown-Code',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Crown-Code, X-Crown-Device',
+  'Access-Control-Expose-Headers': 'X-Scans-Left',
 };
 const json = (body, status = 200, extra = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS, ...extra } });
@@ -78,6 +79,8 @@ const json = (body, status = 200, extra = {}) =>
 // POST { image: <base64 JPEG, no data: prefix> } -> { isWatch, brand, model, reference, confidence, alternatives }
 // Secret: GEMINI_API_KEY. Optional var: GEMINI_MODEL (default below).
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const FREE_PER_DAY = 3; // free scans a day per device
+const FREE_PER_IP = 20; // per network, so reinstalling the app does not reset the limit
 const MAX_IMAGE_B64 = 2_000_000; // ~1.5 MB JPEG; the app sends ~600 px images (~80 KB)
 
 const PROMPT = `You identify wristwatches from a photo of the dial.
@@ -104,9 +107,24 @@ function tooMany(ip) {
 
 async function identify(req, env) {
   if (!env.GEMINI_API_KEY) return json({ error: 'not-configured' }, 503);
-  // invite-only while ACCESS_CODE is set: the app sends the code the owner typed in Settings
-  if (env.ACCESS_CODE && req.headers.get('X-Crown-Code') !== env.ACCESS_CODE) return json({ error: 'access-code' }, 401);
-  if (tooMany(req.headers.get('CF-Connecting-IP') || 'unknown')) return json({ error: 'slow-down' }, 429);
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
+  if (tooMany(ip)) return json({ error: 'slow-down' }, 429);
+  // the owner (ACCESS_CODE typed in Settings) is unlimited; everyone else gets FREE_PER_DAY scans a day
+  const owner = !!env.ACCESS_CODE && req.headers.get('X-Crown-Code') === env.ACCESS_CODE;
+  let left = null;
+  let count = async () => {}; // counted only after a successful answer
+  if (!owner && env.SCANS) {
+    const day = new Date().toISOString().slice(0, 10);
+    const device = (req.headers.get('X-Crown-Device') || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64) || 'none';
+    const kd = `d:${day}:${device}`, ki = `i:${day}:${ip}`;
+    const [usedD, usedI] = (await Promise.all([env.SCANS.get(kd), env.SCANS.get(ki)])).map(v => Number(v) || 0);
+    if (usedD >= FREE_PER_DAY || usedI >= FREE_PER_IP) return json({ error: 'daily-limit', limit: FREE_PER_DAY }, 429);
+    count = () => Promise.all([
+      env.SCANS.put(kd, String(usedD + 1), { expirationTtl: 172800 }),
+      env.SCANS.put(ki, String(usedI + 1), { expirationTtl: 172800 }),
+    ]);
+    left = FREE_PER_DAY - usedD - 1;
+  }
   let body;
   try { body = await req.json(); } catch { return json({ error: 'bad-json' }, 400); }
   const image = typeof body?.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
@@ -129,7 +147,9 @@ async function identify(req, env) {
   let out;
   try { out = JSON.parse(text.replace(/^```json\s*|\s*```$/g, '')); } catch { return json({ error: 'unreadable-answer' }, 502); }
   const str = v => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
+  await count();
   return json({
+    scansLeft: left,
     isWatch: !!out.isWatch,
     brand: str(out.brand),
     model: str(out.model),

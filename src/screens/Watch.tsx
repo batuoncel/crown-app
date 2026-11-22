@@ -408,16 +408,16 @@ export function Settings() {
             </View>
           ) : null}
         </Section>
-        <Section label="SCANNER ACCESS">
-          <Text style={T.small}>Scanning is invite-only while Crown is in testing. Enter your access code once; it stays on this phone.</Text>
+        <Section label="OWNER CODE">
+          <Text style={T.small}>Everyone gets 3 free scans a day. Have an owner code? Enter it once for unlimited scans; it stays on this phone.</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-            <TextInput value={codeText} onChangeText={setCodeText} placeholder="Access code" placeholderTextColor={C.stone} secureTextEntry autoCapitalize="none" autoCorrect={false}
-              accessibilityLabel="Access code" style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12, fontFamily: F.medium, fontSize: 15, color: C.ink }} />
+            <TextInput value={codeText} onChangeText={setCodeText} placeholder="Owner code" placeholderTextColor={C.stone} secureTextEntry autoCapitalize="none" autoCorrect={false}
+              accessibilityLabel="Owner code" style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12, fontFamily: F.medium, fontSize: 15, color: C.ink }} />
             <Pressable onPress={() => { setAccessCode(codeText.trim()); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }} accessibilityRole="button">
               <View style={{ height: 44, paddingHorizontal: 18, borderRadius: 12, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: F.bold, fontSize: 14, color: C.onPrimary }}>Save</Text></View>
             </Pressable>
           </View>
-          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{accessCode ? 'Access code saved.' : 'No access code yet.'}</Text>
+          <Text style={[T.small, { marginTop: 8, fontSize: 12 }]}>{accessCode ? 'Owner code saved.' : 'No owner code.'}</Text>
         </Section>
         <Section label="BACKUP">
           <Text style={T.body}>Keep a copy of your collection</Text>

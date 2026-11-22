@@ -7,6 +7,7 @@ import { API_BASE } from './market';
 export const LIVE_SCAN = true;
 
 export type Identified = {
+  scansLeft: number | null; // free scans left today (null for the owner)
   isWatch: boolean;
   brand: string;
   model: string;
@@ -15,13 +16,16 @@ export type Identified = {
   alternatives: { brand: string; model: string; reference: string }[];
 };
 
-export async function identifyPhoto(photo: string, accessCode = ''): Promise<Identified> {
+export async function identifyPhoto(photo: string, accessCode = '', deviceId = ''): Promise<Identified> {
   const r = await fetch(`${API_BASE}/identify`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Crown-Code': accessCode },
+    headers: { 'Content-Type': 'application/json', 'X-Crown-Code': accessCode, 'X-Crown-Device': deviceId },
     body: JSON.stringify({ image: photo }),
   });
-  if (!r.ok) throw new Error('identify ' + r.status);
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error(`identify ${r.status} ${j?.error ?? ''}`.trim());
+  }
   return r.json();
 }
 

@@ -17,12 +17,12 @@ export type Owned = { modelId: string; addedAt: string; paid?: number; papers?: 
 export type Wish = { modelId: string; addedAt: string; target?: number }; // target in USD
 
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
-  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market>; customModels: Model[]; accessCode?: string };
+  wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market>; customModels: Model[]; accessCode?: string; deviceId?: string };
 
 export type Scan = {
   photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean;
   // live recognition outcomes that have no catalogue match
-  unknown?: { brand: string; model: string; reference: string }; notWatch?: boolean; failed?: boolean; error?: string;
+  unknown?: { brand: string; model: string; reference: string }; notWatch?: boolean; failed?: boolean; error?: string; scansLeft?: number | null;
 };
 
 type Store = Persisted & {
@@ -89,6 +89,9 @@ const syncLive = (market: Record<string, Market>) => {
 };
 
 
+// random id for this install; the scan server counts free scans per device
+const newDeviceId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
 const Ctx = createContext<Store>(null as unknown as Store);
 export const useStore = () => useContext(Ctx);
 
@@ -96,7 +99,7 @@ export const useStore = () => useContext(Ctx);
 const RESUMABLE: Route[] = ['promise', 'goal', 'about', 'plan', 'priming'];
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [s, setS] = useState<Persisted>(initial);
+  const [s, setS] = useState<Persisted>(() => ({ ...initial, deviceId: newDeviceId() }));
   const [ready, setReady] = useState(false);
   const [scan, setScan] = useState<Scan>({});
   const [searchFor, setSearchFor] = useState<'collection' | 'wish'>('collection');
@@ -117,6 +120,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const saved = { ...initial, ...JSON.parse(raw) } as Persisted;
           // every launch starts on Home; only an unfinished onboarding resumes where it stopped
           saved.route = saved.onboarded ? 'home' : RESUMABLE.includes(saved.route) ? saved.route : 'promise';
+          if (!saved.deviceId) saved.deviceId = newDeviceId();
           setS(saved);
         }
       })
@@ -166,7 +170,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     bumpScan: () => setS(p => ({ ...p, scanCount: p.scanCount + 1 })),
     reset: () => {
       setScan({});
-      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lang: p.lang }));
+      setS(p => ({ ...initial, theme: p.theme, currency: p.currency, lang: p.lang, deviceId: p.deviceId, accessCode: p.accessCode }));
     },
     setTheme: theme => setS(p => ({ ...p, theme })),
     setCurrencyPref: currency => setS(p => ({ ...p, currency })),
@@ -177,7 +181,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMarket: (id, m) => setS(p => ({ ...p, market: { ...p.market, [id]: m } })),
     markBackedUp: () => setS(p => ({ ...p, lastBackup: new Date().toISOString() })),
     // a restored backup replaces everything except this device's look (theme, language, currency)
-    restoreBackup: data => setS(p => ({ ...initial, ...(data as Partial<Persisted>), theme: p.theme, lang: p.lang, currency: p.currency, onboarded: true, route: 'home' })),
+    restoreBackup: data => setS(p => ({ ...initial, ...(data as Partial<Persisted>), theme: p.theme, lang: p.lang, currency: p.currency, deviceId: p.deviceId, accessCode: p.accessCode, onboarded: true, route: 'home' })),
     openWatch: (detailId, route = 'watch') => setS(p => ({ ...p, detailId, route })),
     updateWatch: (id, patch) => setS(p => ({ ...p, collection: p.collection.map(o => (o.modelId === id ? { ...o, ...patch } : o)) })),
   };

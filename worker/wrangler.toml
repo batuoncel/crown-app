@@ -8,3 +8,8 @@ compatibility_date = "2026-11-01"
 #   npx wrangler secret put EBAY_CAMPAIGN_ID   (optional, eBay Partner Network)
 # Deploy:
 #   npx wrangler deploy
+
+# daily scan counters (free tier: 3 scans a day per device)
+[[kv_namespaces]]
+binding = "SCANS"
+id = "2516f05baaf84c2cb05857444e8251eb"
