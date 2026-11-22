@@ -22,7 +22,7 @@ export function Paywall() {
     t('Unlimited watches in your collection'),
     answers.goal === 'sell' ? t('Sell alerts when a watch is up 5%') : t('Alerts when a watch moves ±5%'),
     t('Full 5-year price history'),
-    t('Insurance-ready value report (PDF)'),
+    t('Collection inventory for your insurer (PDF)'),
   ];
   const Plan = ({ id, title, sub, price, unit, best }: { id: 'year' | 'week'; title: string; sub: string; price: string; unit: string; best?: boolean }) => {
     const s = plan === id;
@@ -310,7 +310,7 @@ function ReportRow() {
       <Card style={{ marginTop: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.greenSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="shield" size={22} color={C.green} /></View>
         <View style={{ flex: 1 }}>
-          <Text style={[T.b, { fontSize: 15.5 }]}>{t('Insurance report')}</Text>
+          <Text style={[T.b, { fontSize: 15.5 }]}>{t('Collection inventory')}</Text>
           <Text style={T.small}>{t('Your collection as a PDF, with photos and serial numbers.')}</Text>
         </View>
         {pro ? <Icon name="chevron" size={16} color={C.stone} /> : <Pill text="Pro" bg={C.brassSoft} fg={C.brassInk} />}

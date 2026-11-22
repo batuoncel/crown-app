@@ -190,7 +190,7 @@ export function WatchDetail() {
             accessibilityLabel={t('Serial number')}
             style={{ marginTop: 10, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, paddingHorizontal: 12, fontFamily: F.bold, fontSize: 15, letterSpacing: 1, color: C.ink }}
           />
-          <Text style={[T.small, { marginTop: 8 }]}>{t('Only stored on this phone. Used in your insurance report.')}</Text>
+          <Text style={[T.small, { marginTop: 8 }]}>{t('Only stored on this phone. Used in your collection inventory.')}</Text>
         </Card>
 
         <Text style={[T.small, { textAlign: 'center', marginTop: 16 }]}>{t('In your collection since {date}', { date: fmtDay(owned.addedAt) })}</Text>

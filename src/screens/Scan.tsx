@@ -234,7 +234,7 @@ export function Analysing() {
 
 // ---------- 7. Result (aha) ----------
 export function Result() {
-  const { go, scan, answers, addWatch, onboarded, finishOnboarding, pro, giveFeedback, addWish, wishes } = useStore();
+  const { go, scan, answers, addWatch, onboarded, finishOnboarding, pro, giveFeedback, addWish, wishes, openGuide } = useStore();
   const [why, setWhy] = useState(false);
   const [vote, setVote] = useState<'yes' | 'no' | null>(null);
   const m = scan.model;
@@ -264,7 +264,7 @@ export function Result() {
             ? <Image source={{ uri: scan.photo }} style={{ width: 190, height: 190, borderRadius: 95, borderWidth: 4, borderColor: C.surface }} />
             : <Enter><WatchThumb brand={m.brand} size={170} radius={85} /></Enter>}
           <View style={{ position: 'absolute', bottom: 2 }}>
-            <Pill text={scan.confirmed ? t('Confirmed by you') : t('High match · {n}%', { n: scan.confidence ?? 94 })} bg={C.green} fg={C.onPrimary} icon="check" />
+            <Pill text={scan.confirmed ? t('Chosen by you') : t('High match · {n}%', { n: scan.confidence ?? 94 })} bg={C.green} fg={C.onPrimary} icon="check" />
           </View>
         </View>
         <Enter delay={150} style={{ alignItems: 'center', paddingHorizontal: 24, marginTop: 16 }}>
@@ -295,6 +295,14 @@ export function Result() {
               <Text style={[T.small, { marginTop: 10 }]}>{t('Median of listed prices for {ref} over the last 30 days,', { ref: m.ref })} {answers.papers === 'Yes' ? t('plus about 6% for a full set') : answers.papers === 'No' ? t('minus about 7% for no box or papers') : t('as listed for a partial set')}{t(". The range covers the middle of the market. Demo data.")}</Text>
             ) : null}
           </Card>
+        </Enter>
+        <Enter delay={400} style={{ paddingHorizontal: 24, marginTop: 10 }}>
+          <Pressable onPress={() => openGuide('fake')} accessibilityRole="button">
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 4 }}>
+              <Icon name="info" size={15} color={C.stone} />
+              <Text style={[T.small, { flex: 1, fontSize: 12 }]}>{t('Crown identifies the model from the photo. It cannot tell if a watch is genuine.')} <Text style={{ fontFamily: F.bold, color: C.green }}>{t('How to check')}</Text></Text>
+            </View>
+          </Pressable>
         </Enter>
         <Enter delay={450} style={{ paddingHorizontal: 24, marginTop: 4 }}>
           {onboarded ? (

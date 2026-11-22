@@ -15,6 +15,7 @@ export function Report() {
   const [includePhotos, setIncludePhotos] = useState(true);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const opts = { collection, papers: answers.papers, owner: owner.trim(), includePaid, includePhotos };
   const tot = reportTotals(opts);
   const missingSerial = collection.filter(o => !o.serial);
@@ -47,12 +48,12 @@ export function Report() {
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, height: 44 }}>
         <RoundButton icon="back" onPress={() => go('home')} label={t('Back')} />
-        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t('Insurance report')}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink }}>{t('Collection inventory')}</Text>
         <View style={{ width: 36 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={[T.h2, { marginTop: 12 }]}>{t('Your collection on paper.')}</Text>
-        <Text style={T.sub}>{t('A PDF with every watch, its photo, serial number and value today. For your insurer, or for the police if a watch is ever stolen.')}</Text>
+        <Text style={T.sub}>{t('A PDF with every watch, its photo, serial number and estimated value today. Useful for your insurer, or for the police if a watch is ever stolen.')}</Text>
 
         <Card style={{ padding: 16, marginTop: 18, flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ flex: 1 }}>
@@ -94,10 +95,18 @@ export function Report() {
           </Card>
         ) : null}
 
-        <Text style={[T.small, { fontSize: 11.5, marginTop: 14 }]}>{t('Values are estimates from listed market prices and are not a certified appraisal. Your insurer may ask for an appraisal by an accredited watch expert. Prices in this version of Crown are demo data.')}</Text>
+        <Pressable onPress={() => { Haptics.selectionAsync(); setAgreed(a => !a); }} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, alignItems: 'flex-start' }}>
+            <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: agreed ? C.green : C.line, backgroundColor: agreed ? C.green : C.surface, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+              {agreed ? <Icon name="check" size={15} color="#FFFFFF" w={2.6} /> : null}
+            </View>
+            <Text style={[T.body, { flex: 1, fontSize: 14, lineHeight: 20 }]}>{t('The details I entered are correct to the best of my knowledge. I understand this is not an official document or an appraisal, and that Crown does not check whether a watch is genuine.')}</Text>
+          </View>
+        </Pressable>
+        <Text style={[T.small, { fontSize: 11.5, marginTop: 14 }]}>{t('This is not an official document. It is a price analysis to help you.')}</Text>
       </ScrollView>
-      <BottomCTA note={note || (pro ? t('The PDF is created on your phone. Nothing is uploaded.') : t('Insurance reports are part of Crown Pro.'))}>
-        <Button title={pro ? t('Create PDF') : t('Unlock with Pro')} icon={pro ? 'share' : 'lock'} disabled={busy || !collection.length} onPress={create} />
+      <BottomCTA note={note || (pro ? t('The PDF is created on your phone. Nothing is uploaded.') : t('The collection inventory is part of Crown Pro.'))}>
+        <Button title={pro ? t('Create PDF') : t('Unlock with Pro')} icon={pro ? 'share' : 'lock'} disabled={busy || !collection.length || (pro && !agreed)} onPress={create} />
       </BottomCTA>
     </View>
   );

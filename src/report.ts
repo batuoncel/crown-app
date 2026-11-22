@@ -44,14 +44,16 @@ export function buildReportHtml(o: ReportOptions) {
           </div>
         </div>
         <table>
+          ${row(t('Identification'), t('From a photo, chosen by the owner'))}
           ${row(t('Reference'), m.ref)}
-          ${row(t('Serial number'), w.serial || t('Not recorded'))}
+          ${row(t('Serial number (entered by the owner)'), w.serial || t('Not stated'))}
           ${row(t('Case'), `${m.size} · ${t(m.material)}`)}
-          ${row(t('Condition'), t(w.condition ?? 'Good'))}
-          ${row(t('Box and papers'), papersLabel(w.papers ?? o.papers))}
-          ${o.includePaid && w.paid ? row(t('Purchase price'), money(w.paid)) : ''}
+          ${row(t('Condition (declared by the owner)'), w.condition ? t(w.condition) : t('Not stated'))}
+          ${row(t('Box and papers (declared by the owner)'), papersLabel(w.papers ?? o.papers))}
+          ${o.includePaid && w.paid ? row(t('Purchase price (declared by the owner)'), money(w.paid)) : ''}
           ${row(t('In collection since'), fmtDate(new Date(w.addedAt), { day: 'numeric', month: 'short', year: 'numeric' }))}
-          ${w.lastService ? row(t('Last service'), fmtDate(new Date(w.lastService), { month: 'short', year: 'numeric' })) : ''}
+          ${w.lastService ? row(t('Last service (declared by the owner)'), fmtDate(new Date(w.lastService), { month: 'short', year: 'numeric' })) : ''}
+          ${row(t('Authenticity'), t('Not checked by Crown'))}
           ${row(t('12-month change'), `${ch >= 0 ? '+' : '−'}${Math.abs(ch).toFixed(1)}%`)}
         </table>
       </section>`;
@@ -63,7 +65,7 @@ export function buildReportHtml(o: ReportOptions) {
   }).join('');
 
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(t('Insurance report'))} ${id}</title>
+<title>${esc(t('Collection inventory'))} ${id}</title>
 <style>
   @page { size: A4; margin: 18mm 16mm; }
   * { box-sizing: border-box; }
@@ -91,10 +93,12 @@ export function buildReportHtml(o: ReportOptions) {
   .value { font-size: 22px; }
   .range { color: #7D776B; font-size: 11px; }
   h3 { font-size: 15px; font-weight: normal; margin: 22px 0 8px; }
+  .banner { font-family: Arial, sans-serif; background: #F6E3DE; color: #8A2E1C; border-radius: 8px; padding: 8px 12px; font-size: 11px; margin-bottom: 14px; }
   .note { color: #7D776B; font-size: 10px; line-height: 1.5; margin-top: 18px; border-top: 1px solid #E2DCCF; padding-top: 10px; }
 </style></head><body>
+<div class="banner">${esc(t('This is not an official document. It is a price analysis to help you.'))}</div>
 <header>
-  <div><div class="logo">CROWN</div><h1>${esc(t('Insurance report'))}</h1></div>
+  <div><div class="logo">CROWN</div><h1>${esc(t('Collection inventory'))}</h1><div class="sub sans" style="color:#7D776B;font-size:11px">${esc(t('For your insurer'))}</div></div>
   <div class="meta">${esc(t('Report'))} ${id}<br>${esc(date)}${o.owner ? `<br>${esc(t('Owner'))}: ${esc(o.owner)}` : ''}</div>
 </header>
 <div class="total">
@@ -108,7 +112,7 @@ ${watches}
   ${summary}
   <tr><td></td><td colspan="3"><b>${esc(t('Total'))}</b></td><td class="r"><b>${money(round50(tot.mid))}</b></td></tr>
 </table>
-<p class="note">${esc(t('Values are estimates from listed market prices and are not a certified appraisal. Your insurer may ask for an appraisal by an accredited watch expert. Prices in this version of Crown are demo data.'))}</p>
+<p class="note">${esc(t("This is not an official document. It is a price analysis to help you. Details marked 'declared by the owner' were entered by the owner and were not checked by Crown. Crown does not check whether a watch is genuine; values assume it is. Values are estimates from listed market prices, not an appraisal. Your insurer may ask for an appraisal by a watch expert. Prices in this version of Crown are demo data."))}</p>
 </body></html>`;
 }
 
@@ -125,6 +129,6 @@ export async function exportReport(o: ReportOptions): Promise<'shared' | 'printe
     return 'printed';
   }
   const { uri } = await Print.printToFileAsync({ html });
-  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: t('Insurance report') });
+  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: t('Collection inventory') });
   return 'shared';
 }
