@@ -68,16 +68,67 @@ export function clean(items, ref, name) {
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 const json = (body, status = 200, extra = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS, ...extra } });
 
+// ---------- /identify: watch recognition with Gemini ----------
+// POST { image: <base64 JPEG, no data: prefix> } -> { isWatch, brand, model, reference, confidence, alternatives }
+// Secret: GEMINI_API_KEY. Optional var: GEMINI_MODEL (default below).
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const MAX_IMAGE_B64 = 2_000_000; // ~1.5 MB JPEG; the app sends ~600 px images (~80 KB)
+
+const PROMPT = `You identify wristwatches from a photo of the dial.
+Reply with JSON only, in this exact shape:
+{"isWatch": boolean, "brand": string, "model": string, "reference": string, "confidence": number, "alternatives": [{"brand": string, "model": string, "reference": string}]}
+Rules:
+- "isWatch" is false if the photo does not clearly show a wristwatch dial; then leave the other fields empty.
+- "model" is the collection name as the brand writes it, e.g. "Submariner Date", "Speedmaster Moonwatch".
+- "reference" is the manufacturer reference number if you can tell it from the dial, bezel and case (e.g. "126610LN"); otherwise "".
+- "confidence" is 0-100: how sure you are about brand + model + reference together. Use below 80 when several references look alike.
+- "alternatives": up to 3 other likely references when confidence is below 80, otherwise [].
+- Never guess a brand that is not visible or strongly implied by the design. Do not judge whether the watch is genuine.`;
+
+async function identify(req, env) {
+  if (!env.GEMINI_API_KEY) return json({ error: 'not-configured' }, 503);
+  let body;
+  try { body = await req.json(); } catch { return json({ error: 'bad-json' }, 400); }
+  const image = typeof body?.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
+  if (!image || image.length > MAX_IMAGE_B64) return json({ error: 'bad-image' }, 400);
+  const model = env.GEMINI_MODEL || GEMINI_MODEL;
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: PROMPT }, { inline_data: { mime_type: 'image/jpeg', data: image } }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 400 },
+    }),
+  });
+  if (!r.ok) return json({ error: 'gemini ' + r.status }, 502);
+  const data = await r.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+  let out;
+  try { out = JSON.parse(text.replace(/^```json\s*|\s*```$/g, '')); } catch { return json({ error: 'unreadable-answer' }, 502); }
+  const str = v => (typeof v === 'string' ? v.trim().slice(0, 80) : '');
+  return json({
+    isWatch: !!out.isWatch,
+    brand: str(out.brand),
+    model: str(out.model),
+    reference: str(out.reference),
+    confidence: Math.max(0, Math.min(100, Math.round(Number(out.confidence) || 0))),
+    alternatives: Array.isArray(out.alternatives) ? out.alternatives.slice(0, 3).map(a => ({ brand: str(a?.brand), model: str(a?.model), reference: str(a?.reference) })) : [],
+  });
+}
+
 export default {
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url);
+    if (url.pathname === '/identify' && req.method === 'POST') {
+      try { return await identify(req, env); } catch (e) { return json({ error: String(e.message || e) }, 500); }
+    }
     if (url.pathname !== '/market') return json({ error: 'not-found' }, 404);
     const q = (url.searchParams.get('q') || '').trim();
     const ref = (url.searchParams.get('ref') || '').trim();

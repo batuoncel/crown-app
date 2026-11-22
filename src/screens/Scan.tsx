@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { C, F, display, money, num, pct } from '../theme';
 import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Pill, RoundButton, T, WatchArt, WatchThumb } from '../ui';
 import { pickPhoto, shrink } from '../photo';
+import { LIVE_SCAN, identifyPhoto, matchModel } from '../identify';
 import { change12, Model, MODELS, recognise, valueOf } from '../data';
 import { useStore } from '../store';
 import { Spinner, TopBar } from './Onboarding';
@@ -193,6 +194,34 @@ export function Analysing() {
     ])).start();
     const t1 = setTimeout(() => { setStep(1); Haptics.selectionAsync(); }, 800);
     const t2 = setTimeout(() => { setStep(2); Haptics.selectionAsync(); }, 1600);
+    const started = Date.now();
+    // live recognition: send the photo to Gemini through the proxy, keep the animation at least 2.5 s
+    if (LIVE_SCAN && scan.photo) {
+      let alive = true;
+      identifyPhoto(scan.photo)
+        .then(async res => {
+          await new Promise(r => setTimeout(r, Math.max(0, 2500 - (Date.now() - started))));
+          if (!alive) return;
+          bumpScan();
+          if (!res.isWatch) { setScan({ ...scan, notWatch: true }); go('result'); return; }
+          const best = matchModel(res);
+          const alts = res.alternatives.map(matchModel).filter((m): m is NonNullable<typeof m> => !!m && m.id !== best?.id);
+          if (best && res.confidence >= 80) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setScan({ ...scan, model: best, confidence: res.confidence, confirmed: false });
+            go('result');
+          } else if (best || alts.length) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            setScan({ ...scan, options: [best, ...alts].filter((m): m is NonNullable<typeof m> => !!m).slice(0, 3), confidence: res.confidence });
+            go('partial');
+          } else {
+            setScan({ ...scan, unknown: { brand: res.brand, model: res.model, reference: res.reference } });
+            go('result');
+          }
+        })
+        .catch(() => { if (alive) { setScan({ ...scan, failed: true }); go('result'); } });
+      return () => { alive = false; clearTimeout(t1); clearTimeout(t2); };
+    }
     const t3 = setTimeout(() => {
       const r = recognise(answers, scanCount);
       bumpScan();
@@ -238,7 +267,7 @@ export function Result() {
   const [why, setWhy] = useState(false);
   const [vote, setVote] = useState<'yes' | 'no' | null>(null);
   const m = scan.model;
-  if (!m) return <EmptyResult />;
+  if (!m) return <NoMatch />;
   const v = valueOf(m, answers.papers);
   const ch = change12(m);
   const papersText = answers.papers === 'Yes' ? t('full box and papers') : answers.papers === 'Some' ? t('some box and papers') : t('no box or papers');
@@ -344,6 +373,29 @@ function MatchFeedback({ vote, onVote, onScan, onSearch }: { vote: 'yes' | 'no' 
       <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.ink }}>{t("Right watch?")}</Text>
       {chip(t('Yes'), 'thumb', () => onVote('yes'))}
       {chip(t('No'), 'thumb', () => onVote('no'), true)}
+    </View>
+  );
+}
+
+// live recognition without a usable catalogue match: say exactly what happened
+function NoMatch() {
+  const { go, scan } = useStore();
+  const u = scan.unknown;
+  const title = scan.notWatch ? "We couldn't see a watch." : scan.failed ? "We couldn't reach the scanner." : u ? 'We know this one, but not its price yet.' : 'We lost that scan.';
+  const sub = scan.notWatch
+    ? 'Fill the frame with the dial, straight on, in soft light.'
+    : scan.failed
+      ? 'Check your connection and try again. Nothing was saved.'
+      : u
+        ? `Crown recognised ${[u.brand, u.model, u.reference].filter(Boolean).join(' ')}. Prices for this model are coming soon. You can still search for a close match.`
+        : 'Nothing was saved. Try the photo again.';
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <Icon name={u ? 'watch' : 'alert'} size={36} color={C.brassInk} />
+      <Text style={[T.h2, { textAlign: 'center', marginTop: 16 }]}>{title}</Text>
+      <Text style={[T.sub, { textAlign: 'center' }]}>{sub}</Text>
+      <Button title="Scan again" icon="refresh" onPress={() => go('priming')} style={{ marginTop: 24, paddingHorizontal: 32 }} />
+      <Button title="Search by name" kind="ghost" onPress={() => go('search')} />
     </View>
   );
 }

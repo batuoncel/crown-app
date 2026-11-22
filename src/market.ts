@@ -3,8 +3,10 @@
 // that do not change any values.
 import { Model } from './data';
 
-// Set this to the deployed worker URL, e.g. 'https://crown-market.<account>.workers.dev'
-export const MARKET_API = '';
+// The deployed Crown proxy (worker/). Live eBay prices are switched on once the eBay keys are stored there.
+export const API_BASE = 'https://crown-market.crownaiwatchvaluescanner.workers.dev';
+export const LIVE_MARKET = false;
+const MARKET_API = LIVE_MARKET ? API_BASE : '';
 
 export type Listing = { id: string; title: string; price: number; image: string; url: string; condition: string };
 export type Market = {

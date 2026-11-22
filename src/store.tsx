@@ -19,7 +19,11 @@ export type Wish = { modelId: string; addedAt: string; target?: number }; // tar
 type Persisted = { answers: Answers; collection: Owned[]; pro: boolean; onboarded: boolean; scanCount: number; route: Route; theme: ThemeName; currency: Currency; detailId?: string; shared: number; guideId?: string; readGuides: string[];
   wishes: Wish[]; aiConsent: boolean; feedback: { yes: number; no: number }; lang: Lang; ownerName?: string; lastBackup?: string; market: Record<string, Market> };
 
-export type Scan = { photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean };
+export type Scan = {
+  photo?: string; model?: Model; options?: Model[]; confidence?: number; confirmed?: boolean;
+  // live recognition outcomes that have no catalogue match
+  unknown?: { brand: string; model: string; reference: string }; notWatch?: boolean; failed?: boolean;
+};
 
 type Store = Persisted & {
   ready: boolean;
