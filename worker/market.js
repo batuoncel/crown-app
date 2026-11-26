@@ -166,6 +166,18 @@ export default {
     if (url.pathname === '/identify' && req.method === 'POST') {
       try { return await identify(req, env); } catch (e) { return json({ error: String(e.message || e) }, 500); }
     }
+    // eBay Marketplace Account Deletion notifications. Crown stores no eBay user data,
+    // so a notification only needs to be acknowledged.
+    if (url.pathname === "/ebay-deletion") {
+      if (req.method === "GET") {
+        const code = url.searchParams.get("challenge_code") || "";
+        const endpoint = url.origin + url.pathname;
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code + (env.EBAY_VERIFY_TOKEN || "") + endpoint));
+        const challengeResponse = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+        return new Response(JSON.stringify({ challengeResponse }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (req.method === "POST") return new Response(null, { status: 204 });
+    }
     if (url.pathname !== '/market') return json({ error: 'not-found' }, 404);
     const q = (url.searchParams.get('q') || '').trim();
     const ref = (url.searchParams.get('ref') || '').trim();

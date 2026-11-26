@@ -5,7 +5,7 @@ import { Model } from './data';
 
 // The deployed Crown proxy (worker/). Live eBay prices are switched on once the eBay keys are stored there.
 export const API_BASE = 'https://crown-market.crownaiwatchvaluescanner.workers.dev';
-export const LIVE_MARKET = false;
+export const LIVE_MARKET = true;
 const MARKET_API = LIVE_MARKET ? API_BASE : '';
 
 export type Listing = { id: string; title: string; price: number; image: string; url: string; condition: string };
