@@ -78,6 +78,13 @@ export function Camera() {
   const { go, setScan, onboarded, aiConsent, setAiConsent } = useStore();
   const cam = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
+  const [perm, requestPerm] = useCameraPermissions();
+  const [attempt, setAttempt] = useState(0);
+  const [slow, setSlow] = useState(false);
+  // iPhone home-screen apps sometimes show a black camera after an update; offer a way out
+  useEffect(() => { setSlow(false); const id = setTimeout(() => setSlow(true), 3500); return () => clearTimeout(id); }, [attempt]);
+  useEffect(() => { if (perm && !perm.granted && perm.canAskAgain) requestPerm(); }, [perm?.granted]);
+  const retryCamera = async () => { Haptics.selectionAsync(); setReady(false); await requestPerm(); setAttempt(a => a + 1); };
   const [busy, setBusy] = useState(false);
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -118,7 +125,7 @@ export function Camera() {
         <View style={{ width: 36 }} />
       </View>
       <View style={{ flex: 1, marginTop: 8, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-        <CameraView ref={cam} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} facing="back" onCameraReady={() => setReady(true)} />
+        <CameraView key={attempt} ref={cam} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} facing="back" onCameraReady={() => setReady(true)} />
         <Animated.View style={{ opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1] }) }}>
           <Svg width={290} height={290} viewBox="0 0 290 290">
             <Circle cx={145} cy={145} r={132} fill="none" stroke="rgba(243,239,230,.45)" strokeWidth={1.5} strokeDasharray="4 8" />
@@ -127,6 +134,15 @@ export function Camera() {
             ))}
           </Svg>
         </Animated.View>
+        {!ready && slow ? (
+          <View style={{ position: 'absolute', top: 24, left: 24, right: 24, padding: 16, borderRadius: 16, backgroundColor: 'rgba(14,16,13,.85)', alignItems: 'center', gap: 10 }}>
+            <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.nightText, textAlign: 'center' }}>{perm && !perm.granted ? 'Crown needs camera access to scan.' : 'Camera not showing?'}</Text>
+            <Pressable onPress={retryCamera} accessibilityRole="button" style={{ paddingHorizontal: 18, height: 38, borderRadius: 19, backgroundColor: C.green, justifyContent: 'center' }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.onPrimary }}>{perm && !perm.granted ? 'Allow camera' : 'Try again'}</Text>
+            </Pressable>
+            <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.nightStone, textAlign: 'center' }}>If it stays black, close Crown completely and open it again, or use Photos below.</Text>
+          </View>
+        ) : null}
         <View style={{ position: 'absolute', bottom: 28, backgroundColor: 'rgba(14,16,13,.75)', paddingHorizontal: 16, paddingVertical: 9, borderRadius: 18 }}>
           <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.nightText }}>{t("Center the dial in the frame")}</Text>
         </View>
