@@ -19,7 +19,9 @@ export type Market = {
   listings: Listing[];
 };
 
-const searchUrl = (m: Model) => `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`${m.brand} ${m.ref}`)}&_sacat=31387`;
+const cleanName = (m: Model) => m.name.replace(/"[^"]*"/g, '').trim();
+const query = (m: Model) => (m.ref ? `${m.brand} ${m.ref}` : `${m.brand} ${cleanName(m) === 'Watch' ? '' : cleanName(m)}`).trim();
+const searchUrl = (m: Model) => `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query(m))}&_sacat=31387`;
 
 function sample(m: Model): Market {
   if (!m.history.length) return { source: 'sample', checkedAt: new Date().toISOString(), count: 0, listings: [] };
@@ -39,7 +41,7 @@ function sample(m: Model): Market {
 
 export async function fetchMarket(m: Model): Promise<Market> {
   if (!MARKET_API) return sample(m);
-  const u = `${MARKET_API}/market?q=${encodeURIComponent(`${m.brand} ${m.ref}`)}&ref=${encodeURIComponent(m.ref)}&name=${encodeURIComponent(m.name.replace(/"[^"]*"/g, '').trim())}`;
+  const u = `${MARKET_API}/market?q=${encodeURIComponent(query(m))}&ref=${encodeURIComponent(m.ref)}&name=${encodeURIComponent(cleanName(m))}`;
   const r = await fetch(u);
   if (!r.ok) throw new Error('market ' + r.status);
   const j = await r.json();

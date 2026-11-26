@@ -10,6 +10,7 @@ import { LIVE_SCAN, identifyPhoto, matchModel } from '../identify';
 import { customModel, hasPrice } from '../data';
 import { change12, Model, MODELS, recognise, valueOf } from '../data';
 import { useStore } from '../store';
+import { useAutoMarket } from './MarketCard';
 import { Spinner, TopBar } from './Onboarding';
 import { t } from '../i18n';
 
@@ -274,6 +275,7 @@ export function Result() {
   const [why, setWhy] = useState(false);
   const [vote, setVote] = useState<'yes' | 'no' | null>(null);
   const m = scan.model;
+  useAutoMarket(m ? [m] : []);
   if (!m) return <NoMatch />;
   const v = valueOf(m, answers.papers);
   const ch = change12(m);
@@ -321,15 +323,17 @@ export function Result() {
                 </View>
                 <Text style={[T.small, { fontSize: 12.5 }]}>{t('Good condition')} · {papersText}</Text>
               </View>
-              <Pill text={pct(ch)} bg={ch >= 0 ? C.upSoft : C.downSoft} fg={ch >= 0 ? C.up : C.down} />
+              {m.history.length ? <Pill text={pct(ch)} bg={ch >= 0 ? C.upSoft : C.downSoft} fg={ch >= 0 ? C.up : C.down} /> : null}
             </View>
+            {m.history.length ? <>
             <View style={{ marginTop: 12 }}><LineChart data={m.history} width={300} height={58} color={ch >= 0 ? C.up : C.down} /></View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
               <Text style={[T.small, { fontSize: 11.5 }]}>{t("Oct 2025")}</Text>
               <Pressable onPress={() => setWhy(w => !w)} hitSlop={8}><Text style={{ fontFamily: F.bold, fontSize: 12, color: C.green }}>{why ? t('Hide') : t('Why this range?')}</Text></Pressable>
               <Text style={[T.small, { fontSize: 11.5 }]}>{t("Today")}</Text>
             </View>
-            {why ? (
+            </> : <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>Typical eBay asking price, adjusted for box and papers.</Text>}
+            {m.history.length && why ? (
               <Text style={[T.small, { marginTop: 10 }]}>{t('Median of listed prices for {ref} over the last 30 days,', { ref: m.ref })} {answers.papers === 'Yes' ? t('plus about 6% for a full set') : answers.papers === 'No' ? t('minus about 7% for no box or papers') : t('as listed for a partial set')}{t(". The range covers the middle of the market. Demo data.")}</Text>
             ) : null}
           </Card>

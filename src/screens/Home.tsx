@@ -6,6 +6,7 @@ import { BottomCTA, Button, Card, CountUp, Enter, Icon, LineChart, Logo, Pill, R
 import { GuideCarousel } from './Guide';
 import { byId, change12, hasPrice, conditionFactor, marketSignal, ownedValue, papersFactor, planSlots, serviceDue, valueOf } from '../data';
 import { useStore } from '../store';
+import { useAutoMarket } from './MarketCard';
 import { fmtDate as fmtLocalDate, t } from '../i18n';
 
 const fmtDate = (d: Date) => fmtLocalDate(d, { month: 'short', day: 'numeric' });
@@ -129,6 +130,7 @@ export function Home() {
   };
   const [range, setRange] = useState<'1M' | '6M' | '1Y' | '5Y'>('1Y');
   const models = collection.map(o => byId(o.modelId));
+  useAutoMarket(models);
   const slots = pro ? Infinity : 1;
   const series = Array.from({ length: 13 }, (_, i) => collection.reduce((s, o) => s + (byId(o.modelId).history[i] ?? 0) * papersFactor(o.papers ?? answers.papers) * conditionFactor(o.condition), 0));
   const paidOnes = collection.filter(o => o.paid);
@@ -234,7 +236,7 @@ export function Home() {
                       {hasPrice(m) ? (
                         <>
                           <Text style={{ fontFamily: F.serif, ...display(20), color: C.ink }}>{money(v.mid)}</Text>
-                          <Text style={{ fontFamily: F.bold, fontSize: 12, color: ch >= 0 ? C.up : C.down }}>{pct(ch)}</Text>
+                          {m.history.length ? <Text style={{ fontFamily: F.bold, fontSize: 12, color: ch >= 0 ? C.up : C.down }}>{pct(ch)}</Text> : <Text style={{ fontFamily: F.semibold, fontSize: 11.5, color: C.stone }}>eBay price</Text>}
                         </>
                       ) : <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.stone }}>No price yet</Text>}
                     </View>

@@ -121,7 +121,7 @@ export function WatchDetail() {
           </View>
           {range === '5Y' ? <Text style={[T.small, { fontSize: 11.5, marginTop: 8 }]}>{t("Demo data covers 12 months.")}</Text> : null}
         </Card>
-        ) : (
+        ) : LIVE[m.id] ? null : (
         <Card style={{ padding: 18, marginTop: 18 }}>
           <Text style={T.label}>NO PRICE YET</Text>
           <Text style={[T.body, { marginTop: 6 }]}>Crown recognised this watch but has no market prices for it yet.</Text>

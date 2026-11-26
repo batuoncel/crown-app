@@ -4,10 +4,26 @@ import * as Haptics from 'expo-haptics';
 import { C, F, display, money } from '../theme';
 import { Card, Icon, T } from '../ui';
 import { Model } from '../data';
-import { Market, fetchMarket } from '../market';
+import { LIVE_MARKET, Market, fetchMarket } from '../market';
 import { useStore } from '../store';
 
 const STALE_MS = 6 * 60 * 60 * 1000; // refresh automatically after 6 hours
+const needsFetch = (d?: Market) => !d || (LIVE_MARKET && d.source === 'sample') || Date.now() - new Date(d.checkedAt).getTime() > STALE_MS;
+
+// fetch eBay prices in the background for watches shown in a list (collection, scan result)
+const inflight = new Set<string>();
+export function useAutoMarket(models: Model[]) {
+  const { market, setMarket } = useStore();
+  const key = models.map(m => m.id).join(',');
+  useEffect(() => {
+    if (!LIVE_MARKET) return;
+    for (const m of models) {
+      if (inflight.has(m.id) || !needsFetch(market[m.id])) continue;
+      inflight.add(m.id);
+      fetchMarket(m).then(r => setMarket(m.id, r)).catch(() => {}).finally(() => inflight.delete(m.id));
+    }
+  }, [key]);
+}
 
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -36,7 +52,7 @@ export function MarketCard({ m, paid }: { m: Model; paid?: number }) {
     }
   };
   useEffect(() => {
-    if (!data || Date.now() - new Date(data.checkedAt).getTime() > STALE_MS) refresh();
+    if (needsFetch(data) && !inflight.has(m.id)) refresh();
   }, [m.id]);
 
   const enough = data && data.median && data.count >= 3;
